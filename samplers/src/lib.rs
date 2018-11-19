@@ -59,8 +59,7 @@ pub fn to_hemisphere(points: Vec<UnitSquareSample>, e: f64) -> Vec<Vector3<f64>>
             let pu = sin_theta * cos_phi;
             let pv = sin_theta * sin_phi;
             let pw = cos_theta;
-            // TODO FIXME
-            normalize(&Vector3::new(pu, pw, pv))
+            normalize(&Vector3::new(pu, pv, pw))
         }).collect()
 }
 
