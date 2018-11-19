@@ -24,39 +24,31 @@ pub struct UnitSquareSample {
     pub y: f64,
 }
 
-pub struct SampleSource {
+pub struct Sampler {
     pub rng: IsaacRng,
 }
 
-pub fn new() -> SampleSource {
-    let mut trng = rand::thread_rng();
+impl Sampler {
+    pub fn new() -> Sampler {
+        let mut trng = rand::thread_rng();
 
-    SampleSource {
-        rng: IsaacRng::new_from_u64(trng.gen())
+        Sampler {
+            rng: IsaacRng::new_from_u64(trng.gen())
+        }
+    }
+
+    pub fn u_grid_jittered(&mut self, root: usize) -> Vec<UnitSquareSample> {
+        let between = Uniform::from(0.0..1.0);
+        let increment = 1.0 / (root as f64);
+        let regular = u_grid_regular(root);
+        regular.iter().map(
+            |p| UnitSquareSample {
+                x: p.x + (between.sample(&mut self.rng) - 0.5) * increment,
+                y: p.y + (between.sample(&mut self.rng) - 0.5) * increment,
+            }).collect()
     }
 }
 
-pub fn u_grid_regular(root: usize) -> Vec<UnitSquareSample> {
-    let increment = 1.0 / (root as f64);
-    let start = 0.5 * increment;
-    let range: Vec<f64> = (0..root).map(|i| start + increment * (i as f64)).collect();
-
-    iproduct!(&range, &range).map(
-        |(x, y)| UnitSquareSample { x: x.clone(), y: y.clone(), }).collect()
-}
-
-pub fn u_grid_jittered(s: &mut SampleSource, root: usize) -> Vec<UnitSquareSample> {
-    let between = Uniform::from(0.0..1.0);
-    let increment = 1.0 / (root as f64);
-    let regular = u_grid_regular(root);
-    regular.iter().map(
-        |p| UnitSquareSample {
-            x: p.x + (between.sample(&mut s.rng) - 0.5) * increment,
-            y: p.y + (between.sample(&mut s.rng) - 0.5) * increment,
-        }).collect()
-}
-
-// Assumes input samples are all in [0..1]
 pub fn to_hemisphere(points: Vec<UnitSquareSample>, e: f64) -> Vec<Vector3<f64>> {
     points.iter().map(
         |p| {
@@ -72,7 +64,6 @@ pub fn to_hemisphere(points: Vec<UnitSquareSample>, e: f64) -> Vec<Vector3<f64>>
         }).collect()
 }
 
-// Assumes input samples are all in [0..1]
 pub fn to_poisson_disc(points: Vec<UnitSquareSample>) -> Vec<UnitDiscSample> {
     points.iter().map(
         |p| {
@@ -111,4 +102,13 @@ pub fn to_poisson_disc(points: Vec<UnitSquareSample>) -> Vec<UnitDiscSample> {
             }
         }
         ).collect()
+}
+
+pub fn u_grid_regular(root: usize) -> Vec<UnitSquareSample> {
+    let increment = 1.0 / (root as f64);
+    let start = 0.5 * increment;
+    let range: Vec<f64> = (0..root).map(|i| start + increment * (i as f64)).collect();
+
+    iproduct!(&range, &range).map(
+        |(x, y)| UnitSquareSample { x: x.clone(), y: y.clone(), }).collect()
 }
