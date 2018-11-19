@@ -2,8 +2,6 @@
 use nalgebra::{Vector3};
 use rand::Rng;
 
-use samplers::{Sampler, to_poisson_disc, to_hemisphere};
-
 pub struct MasterSampleSets {
     image_width: usize,
     pub pixel_sets: Vec<Vec<samplers::UnitSquareSample>>,
@@ -12,19 +10,19 @@ pub struct MasterSampleSets {
 }
 
 impl MasterSampleSets {
-    pub fn new(sampler: &mut Sampler, sample_root: usize,
+    pub fn new(sampler: &mut samplers::Sampler, sample_root: usize,
                max_depth: usize, width: usize) -> MasterSampleSets {
         MasterSampleSets {
             pixel_sets: (0..width).map(|_|
                 sampler.grid_jittered(sample_root)).collect(),
 
             disc_sets: (0..width).map(|_|
-                to_poisson_disc(
+                samplers::to_poisson_disc(
                     sampler.grid_jittered(sample_root))).collect(),
 
             hemi_sets: (0..width).map(|_|
                 (0..max_depth).map(|_|
-                    to_hemisphere(
+                    samplers::to_hemisphere(
                         sampler.grid_jittered(sample_root),
                         0.0)
                     ).collect()
