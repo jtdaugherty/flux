@@ -1,0 +1,6 @@
+[package]
+name = "flux-node"
+version = "0.1.0"
+authors = ["Jonathan Daugherty <cygnus@foobox.com>"]
+
+[dependencies]
