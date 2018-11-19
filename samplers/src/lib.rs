@@ -37,10 +37,10 @@ impl Sampler {
         }
     }
 
-    pub fn u_grid_jittered(&mut self, root: usize) -> Vec<UnitSquareSample> {
+    pub fn grid_jittered(&mut self, root: usize) -> Vec<UnitSquareSample> {
         let between = Uniform::from(0.0..1.0);
         let increment = 1.0 / (root as f64);
-        let regular = u_grid_regular(root);
+        let regular = grid_regular(root);
         regular.iter().map(
             |p| UnitSquareSample {
                 x: p.x + (between.sample(&mut self.rng) - 0.5) * increment,
@@ -103,7 +103,7 @@ pub fn to_poisson_disc(points: Vec<UnitSquareSample>) -> Vec<UnitDiscSample> {
         ).collect()
 }
 
-pub fn u_grid_regular(root: usize) -> Vec<UnitSquareSample> {
+pub fn grid_regular(root: usize) -> Vec<UnitSquareSample> {
     let increment = 1.0 / (root as f64);
     let start = 0.5 * increment;
     let range: Vec<f64> = (0..root).map(|i| start + increment * (i as f64)).collect();
