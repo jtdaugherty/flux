@@ -170,7 +170,7 @@ impl Worker for LocalWorker {
                 if *j_id == u.job_id {
                     println!("LocalWorker: got work unit {:?} for current job", u);
                     // TODO: actually render the requested row range,
-                    // then feed each row to the handler
+                    // then feed the result to the handler
                     // self.result_handler.work_unit_finished(...);
                     true
                 } else {
