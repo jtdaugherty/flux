@@ -122,20 +122,20 @@ pub trait Worker {
     fn render(&mut self, u: WorkUnit) -> bool;
 }
 
-pub trait ResultHandler {
+pub trait WorkUnitResultHandler {
     // Called by a Worker when a work unit has been finished.
     fn work_unit_finished(&mut self, r: WorkUnitResult);
 }
 
 pub struct LocalWorker {
     current_job: Option<(JobID, Job)>,
-    result_handler: Box<ResultHandler>,
+    result_handler: Box<WorkUnitResultHandler>,
     // Need to store a work queue of work units that gets populated by
     // render() and gets consumed by worker thread
 }
 
 impl LocalWorker {
-    fn new(handler: Box<ResultHandler>) -> LocalWorker {
+    fn new(handler: Box<WorkUnitResultHandler>) -> LocalWorker {
         LocalWorker {
             current_job: None,
             result_handler: handler,
