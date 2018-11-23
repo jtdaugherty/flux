@@ -23,5 +23,7 @@ fn main() {
 
     let us = work_units(id, &j);
 
-    println!("Work units: {:?}", us);
+    for u in us {
+        println!("{:?}", u);
+    }
 }
