@@ -1,5 +1,5 @@
 [package]
-name = "fluxcore"
+name = "flux-core"
 version = "0.1.0"
 authors = ["Jonathan Daugherty <cygnus@foobox.com>"]
 
