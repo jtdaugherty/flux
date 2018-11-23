@@ -47,6 +47,8 @@ pub struct WorkUnitResult {
     pub rows: Vec<Vec<Color>>,
 }
 
+#[derive(Clone)]
+#[derive(Copy)]
 pub struct JobConfiguration {
     pub sample_root: usize,
     pub max_trace_depth: usize,
@@ -79,6 +81,8 @@ pub fn work_units(id: JobID, j: &Job) -> Vec<WorkUnit> {
 
 // A job provides all the resources and configuration needed to render a
 // scene.
+#[derive(Clone)]
+#[derive(Copy)]
 pub struct Job {
     pub scene: Scene,
     pub config: JobConfiguration,
@@ -86,10 +90,10 @@ pub struct Job {
 
 pub struct RenderManager {
     job_id_allocator: JobIDAllocator,
+    workers: Vec<Box<Worker>>,
 
     // Also need state for:
     //
-    // Worker vector
     // Thread handle(s) for any threads we spawned in the constructor
     // Work unit queue that threads will take from when they need work
     //
@@ -98,14 +102,21 @@ pub struct RenderManager {
 }
 
 impl RenderManager {
-    pub fn new(_workers: Vec<Box<Worker>>) -> RenderManager {
+    pub fn new(workers: Vec<Box<Worker>>) -> RenderManager {
         RenderManager {
             job_id_allocator: JobIDAllocator::new(),
+            workers: workers,
         }
     }
 
-    pub fn schedule_job(&mut self, _j: Job) -> JobID {
-        self.job_id_allocator.next()
+    pub fn schedule_job(&mut self, j: Job) -> JobID {
+        let id = self.job_id_allocator.next();
+
+        for i in 0..self.workers.len() {
+            self.workers[i].schedule_job(j, id);
+        }
+
+        id
     }
 
     pub fn cancel_job(&mut self, _id: JobID) {
@@ -113,8 +124,8 @@ impl RenderManager {
 }
 
 pub trait Worker {
-    // Set the worker's current job.
-    fn set_job(&mut self, j: Job, id: JobID);
+    // Schedule a job on this worker.
+    fn schedule_job(&mut self, j: Job, id: JobID);
 
     // Schedules the work unit to be rendered. Returns whether the
     // scheduling succeeded. Fails if the work unit is not for the
@@ -144,7 +155,12 @@ impl LocalWorker {
 }
 
 impl Worker for LocalWorker {
-    fn set_job(&mut self, j: Job, id: JobID) {
+    // For the local worker, what we really want is to push scheduled
+    // jobs into a queue. A thread waits for a job, pulls one out, then
+    // waits on work units until it runs out, then goes back to waiting
+    // on a scheduled job.
+
+    fn schedule_job(&mut self, j: Job, id: JobID) {
         self.current_job = Some((id, j));
     }
 
