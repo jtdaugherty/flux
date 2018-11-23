@@ -72,7 +72,6 @@ pub fn work_units(id: JobID, j: &Job) -> Vec<WorkUnit> {
         };
         us.push(u);
         i += num_rows;
-        println!("{}", i);
     }
 
     us
