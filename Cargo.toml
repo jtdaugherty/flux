@@ -3,5 +3,5 @@ members = [
   "samplers",
   "flux",
   "flux-node",
-  "flux-core",
+  "fluxcore",
   ]
