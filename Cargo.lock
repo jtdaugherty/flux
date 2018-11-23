@@ -39,21 +39,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "flux"
 version = "0.1.0"
 dependencies = [
- "samplers 0.1.0",
-]
-
-[[package]]
-name = "flux-core"
-version = "0.1.0"
-dependencies = [
- "nalgebra 0.16.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "fluxcore 0.1.0",
  "samplers 0.1.0",
 ]
 
 [[package]]
 name = "flux-node"
 version = "0.1.0"
+
+[[package]]
+name = "fluxcore"
+version = "0.1.0"
+dependencies = [
+ "nalgebra 0.16.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "samplers 0.1.0",
+]
 
 [[package]]
 name = "fuchsia-zircon"

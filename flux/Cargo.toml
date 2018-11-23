@@ -5,3 +5,4 @@ authors = ["Jonathan Daugherty <cygnus@foobox.com>"]
 
 [dependencies]
 samplers = { path = "../samplers" }
+fluxcore = { path = "../flux-core" }

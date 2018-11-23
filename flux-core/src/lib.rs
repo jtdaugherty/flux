@@ -4,7 +4,7 @@ extern crate samplers;
 extern crate rand;
 
 mod color;
-mod shapes;
+pub mod shapes;
 mod sampling;
-mod scene;
-mod engine;
+pub mod scene;
+pub mod engine;
