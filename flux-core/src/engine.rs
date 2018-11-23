@@ -114,7 +114,9 @@ impl Worker for LocalWorker {
             Some((j_id, j)) => {
                 if *j_id == u.job_id {
                     println!("LocalWorker: got work unit {:?} for current job", u);
-                    self.row_handler.row_ready(u.job_id, 0, vec![]);
+                    // TODO: actually render the requested row range,
+                    // then feed each row to the handler
+                    // self.row_handler.row_ready(u.job_id, 0, vec![]);
                     true
                 } else {
                     false
