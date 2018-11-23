@@ -80,11 +80,17 @@ impl RenderManager {
 }
 
 pub trait Worker {
+    // Set the worker's current job.
     fn set_job(&mut self, j: Job, id: JobID);
+
+    // Schedules the work unit to be rendered. Returns whether the
+    // scheduling succeeded. Fails if the work unit is not for the
+    // current job.
     fn render(&mut self, u: WorkUnit) -> bool;
 }
 
 pub trait RowHandler {
+    // Called by a Worker when an output row has been rendered.
     fn row_ready(&mut self, id: JobID, row_index: usize, v: Vec<Color>);
 }
 
