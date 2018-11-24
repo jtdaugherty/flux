@@ -1,7 +1,10 @@
 
 use rand::Rng;
+use crossbeam::channel::{Sender, Receiver, unbounded};
+use crossbeam::sync::WaitGroup;
+use std::thread;
 
-use scene::Scene;
+use scene::SceneData;
 use color::Color;
 
 #[derive(Debug)]
@@ -55,7 +58,7 @@ pub struct JobConfiguration {
     pub rows_per_work_unit: usize,
 }
 
-pub fn work_units(id: JobID, j: &Job) -> Vec<WorkUnit> {
+pub fn work_units(j: &Job) -> Vec<WorkUnit> {
     if j.config.rows_per_work_unit <= 0 {
         panic!("Job row per work unit count invalid: {}",
                j.config.rows_per_work_unit);
@@ -64,13 +67,13 @@ pub fn work_units(id: JobID, j: &Job) -> Vec<WorkUnit> {
     let mut us = Vec::new();
     let mut i = 0;
 
-    while i < j.scene.image_height - 1 {
-        let remaining_rows = j.scene.image_height - i;
+    while i < j.scene_data.image_height - 1 {
+        let remaining_rows = j.scene_data.image_height - i;
         let num_rows = std::cmp::min(j.config.rows_per_work_unit, remaining_rows);
         let u = WorkUnit {
             row_start: i,
             row_end: i + num_rows - 1,
-            job_id: id,
+            job_id: j.id,
         };
         us.push(u);
         i += num_rows;
@@ -84,100 +87,161 @@ pub fn work_units(id: JobID, j: &Job) -> Vec<WorkUnit> {
 #[derive(Clone)]
 #[derive(Copy)]
 pub struct Job {
-    pub scene: Scene,
+    pub id: JobID,
+    pub scene_data: SceneData,
     pub config: JobConfiguration,
 }
 
 pub struct RenderManager {
     job_id_allocator: JobIDAllocator,
-    workers: Vec<Box<Worker>>,
+    job_queue: Sender<Option<(Job, Sender<()>)>>,
+    thread_handle: thread::JoinHandle<()>,
+}
 
-    // Also need state for:
-    //
-    // Thread handle(s) for any threads we spawned in the constructor
-    // Work unit queue that threads will take from when they need work
-    //
-    // Need to make it possible for different workers to be working on
-    // different jobs, for full generality
+pub struct JobSender(Sender<Option<(Job, Receiver<Option<WorkUnit>>, Sender<WorkUnitResult>, WaitGroup)>>);
+
+pub struct JobHandle {
+    waiter: Receiver<()>,
+}
+
+impl JobHandle {
+    pub fn wait(&self) {
+        self.waiter.recv().unwrap()
+    }
 }
 
 impl RenderManager {
-    pub fn new(workers: Vec<Box<Worker>>) -> RenderManager {
+    pub fn new(senders: Vec<JobSender>, result_sender: Sender<WorkUnitResult>) -> RenderManager {
+        if senders.len() == 0 {
+            panic!("RenderManager::new: must provide at least one job sender");
+        }
+
+        let (s, r): (Sender<Option<(Job, Sender<()>)>>, Receiver<Option<(Job, Sender<()>)>>) = unbounded();
+
+        let handle = thread::spawn(move || {
+            while let Ok(Some((job, notify_done))) = r.recv() {
+                println!("Render manager thread: got job {:?}", job.id);
+
+                let (ws, wr) = unbounded();
+                let wg = WaitGroup::new();
+
+                for u in work_units(&job) {
+                    ws.send(Some(u)).unwrap();
+                }
+
+                println!("Render manager thread: sent all work units");
+
+                senders.iter().for_each(|sender| {
+                    ws.send(None).unwrap();
+                    sender.0.send(Some((job, wr.clone(), result_sender.clone(), wg.clone()))).unwrap();
+                });
+
+                println!("Render manager thread: waiting on wait group");
+
+                wg.wait();
+
+                println!("Render manager thread: done, notifying job handle");
+
+                notify_done.send(()).unwrap();
+            }
+
+            println!("Render manager shutting down");
+        });
+
         RenderManager {
             job_id_allocator: JobIDAllocator::new(),
-            workers: workers,
+            job_queue: s,
+            thread_handle: handle,
         }
     }
 
-    pub fn schedule_job(&mut self, j: Job) -> JobID {
+    pub fn schedule_job(&mut self, scene_data: SceneData, config: JobConfiguration) -> JobHandle {
         let id = self.job_id_allocator.next();
-
-        for i in 0..self.workers.len() {
-            self.workers[i].schedule_job(j, id);
+        let (s, r): (Sender<()>, Receiver<()>) = unbounded();
+        let j = Job {
+            scene_data,
+            config,
+            id,
+        };
+        self.job_queue.send(Some((j, s))).unwrap();
+        JobHandle {
+            waiter: r
         }
-
-        id
     }
 
-    pub fn cancel_job(&mut self, _id: JobID) {
+    pub fn stop(self) {
+        self.job_queue.send(None).unwrap();
+        self.thread_handle.join().unwrap();
     }
 }
 
 pub trait Worker {
-    // Schedule a job on this worker.
-    fn schedule_job(&mut self, j: Job, id: JobID);
-
-    // Schedules the work unit to be rendered. Returns whether the
-    // scheduling succeeded. Fails if the work unit is not for the
-    // current job.
-    fn render(&mut self, u: WorkUnit) -> bool;
-}
-
-pub trait WorkUnitResultHandler {
-    // Called by a Worker when a work unit has been finished.
-    fn work_unit_finished(&mut self, r: WorkUnitResult);
+    fn sender(&self) -> JobSender;
 }
 
 pub struct LocalWorker {
-    current_job: Option<(JobID, Job)>,
-    result_handler: Box<WorkUnitResultHandler>,
-    // Need to store a work queue of work units that gets populated by
-    // render() and gets consumed by worker thread
+    sender: Sender<Option<(Job, Receiver<Option<WorkUnit>>, Sender<WorkUnitResult>, WaitGroup)>>,
+    thread_handle: thread::JoinHandle<()>,
 }
 
 impl LocalWorker {
-    fn new(handler: Box<WorkUnitResultHandler>) -> LocalWorker {
+    pub fn new() -> LocalWorker {
+        let (s, r): (Sender<Option<(Job, Receiver<Option<WorkUnit>>, Sender<WorkUnitResult>, WaitGroup)>>, Receiver<Option<(Job, Receiver<Option<WorkUnit>>, Sender<WorkUnitResult>, WaitGroup)>>) = unbounded();
+
+        let handle = thread::spawn(move || {
+            while let Ok(Some((job, recv_unit, _send_result, wg))) = r.recv() {
+                println!("Local worker: got job {:?}", job.id);
+                // TODO build scene from scene data
+                // TODO generate sample data
+                while let Ok(Some(unit)) = recv_unit.recv() {
+                    // TODO actually do the work and send the result
+                    println!("Local worker: got work unit {:?}", unit);
+                }
+                println!("Local worker finished job");
+                drop(wg);
+            }
+
+            println!("Local worker shutting down");
+        });
+
         LocalWorker {
-            current_job: None,
-            result_handler: handler,
+            sender: s,
+            thread_handle: handle,
         }
+    }
+
+    pub fn stop(self) {
+        self.sender.send(None).unwrap();
+        self.thread_handle.join().unwrap();
     }
 }
 
 impl Worker for LocalWorker {
-    // For the local worker, what we really want is to push scheduled
-    // jobs into a queue. A thread waits for a job, pulls one out, then
-    // waits on work units until it runs out, then goes back to waiting
-    // on a scheduled job.
+    fn sender(&self) -> JobSender {
+        JobSender(self.sender.clone())
+    }
+}
 
-    fn schedule_job(&mut self, j: Job, id: JobID) {
-        self.current_job = Some((id, j));
+pub struct ConsoleResultReporter {
+    sender: Sender<WorkUnitResult>,
+}
+
+impl ConsoleResultReporter {
+    pub fn new() -> ConsoleResultReporter {
+        let (s, r): (Sender<WorkUnitResult>, Receiver<WorkUnitResult>) = unbounded();
+
+        thread::spawn(move || {
+            while let Ok(result) = r.recv() {
+                println!("ConsoleResultReporter: got result for job ID {:?}", result.work_unit.job_id);
+            }
+        });
+
+        ConsoleResultReporter {
+            sender: s,
+        }
     }
 
-    fn render(&mut self, u: WorkUnit) -> bool {
-        match &self.current_job {
-            Some((j_id, j)) => {
-                if *j_id == u.job_id {
-                    println!("LocalWorker: got work unit {:?} for current job", u);
-                    // TODO: actually render the requested row range,
-                    // then feed the result to the handler
-                    // self.result_handler.work_unit_finished(...);
-                    true
-                } else {
-                    false
-                }
-            },
-            None => false
-        }
+    pub fn sender(&self) -> Sender<WorkUnitResult> {
+        self.sender.clone()
     }
 }
