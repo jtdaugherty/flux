@@ -15,14 +15,20 @@ fn main() {
         image_height: 600,
     };
 
+    println!("Starting local worker");
     let worker = LocalWorker::new();
     let reporter = ConsoleResultReporter::new();
+
+    println!("Starting rendering manager");
     let mut manager = RenderManager::new(vec![worker.handle()], reporter.sender());
 
+    println!("Sending job to rendering manager");
     let job = manager.schedule_job(s, c);
 
+    println!("Awaiting job completion");
     job.wait();
 
+    println!("Shutting down");
     manager.stop();
     worker.stop();
 }
