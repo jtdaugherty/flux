@@ -45,6 +45,12 @@ pub struct WorkUnit {
     job_id: JobID,
 }
 
+pub enum RenderEvent {
+    ImageInfo { width: usize, height: usize },
+    RowsReady(WorkUnitResult),
+    RenderingFinished,
+}
+
 pub struct WorkUnitResult {
     pub work_unit: WorkUnit,
     pub rows: Vec<Vec<Color>>,
@@ -99,11 +105,11 @@ pub struct RenderManager {
 }
 
 pub struct WorkerHandle {
-    sender: Sender<Option<(Job, Receiver<Option<WorkUnit>>, Sender<WorkUnitResult>, WaitGroup)>>,
+    sender: Sender<Option<(Job, Receiver<Option<WorkUnit>>, Sender<RenderEvent>, WaitGroup)>>,
 }
 
 impl WorkerHandle {
-    pub fn send(&self, j: Job, r: Receiver<Option<WorkUnit>>, s: Sender<WorkUnitResult>, wg: WaitGroup) {
+    pub fn send(&self, j: Job, r: Receiver<Option<WorkUnit>>, s: Sender<RenderEvent>, wg: WaitGroup) {
         self.sender.send(Some((j, r, s, wg))).unwrap();
     }
 }
@@ -119,7 +125,7 @@ impl JobHandle {
 }
 
 impl RenderManager {
-    pub fn new(workers: Vec<WorkerHandle>, result_sender: Sender<WorkUnitResult>) -> RenderManager {
+    pub fn new(workers: Vec<WorkerHandle>, result_sender: Sender<RenderEvent>) -> RenderManager {
         if workers.len() == 0 {
             panic!("RenderManager::new: must provide at least one worker handle");
         }
@@ -131,6 +137,12 @@ impl RenderManager {
 
             while let Ok(Some((job, notify_done))) = r.recv() {
                 println!("Render manager: got job {:?}", job.id);
+
+                let info_event = RenderEvent::ImageInfo {
+                    width: job.scene_data.image_width,
+                    height: job.scene_data.image_height,
+                };
+                result_sender.send(info_event).unwrap();
 
                 let (ws, wr) = unbounded();
                 let wg = WaitGroup::new();
@@ -151,6 +163,8 @@ impl RenderManager {
                 wg.wait();
 
                 println!("Render manager: job complete");
+
+                result_sender.send(RenderEvent::RenderingFinished).unwrap();
 
                 notify_done.send(()).unwrap();
             }
@@ -191,22 +205,29 @@ pub trait Worker {
 }
 
 pub struct LocalWorker {
-    sender: Sender<Option<(Job, Receiver<Option<WorkUnit>>, Sender<WorkUnitResult>, WaitGroup)>>,
+    sender: Sender<Option<(Job, Receiver<Option<WorkUnit>>, Sender<RenderEvent>, WaitGroup)>>,
     thread_handle: thread::JoinHandle<()>,
 }
 
 impl LocalWorker {
     pub fn new() -> LocalWorker {
-        let (s, r): (Sender<Option<(Job, Receiver<Option<WorkUnit>>, Sender<WorkUnitResult>, WaitGroup)>>, Receiver<Option<(Job, Receiver<Option<WorkUnit>>, Sender<WorkUnitResult>, WaitGroup)>>) = unbounded();
+        let (s, r): (Sender<Option<(Job, Receiver<Option<WorkUnit>>, Sender<RenderEvent>, WaitGroup)>>, Receiver<Option<(Job, Receiver<Option<WorkUnit>>, Sender<RenderEvent>, WaitGroup)>>) = unbounded();
 
         let handle = thread::spawn(move || {
-            while let Ok(Some((job, recv_unit, _send_result, wg))) = r.recv() {
+            while let Ok(Some((job, recv_unit, send_result, wg))) = r.recv() {
                 println!("Local worker: got job {:?}", job.id);
                 // TODO build scene from scene data
                 // TODO generate sample data
                 while let Ok(Some(unit)) = recv_unit.recv() {
                     // TODO actually do the work and send the result
                     println!("Local worker: got work unit {:?}", unit);
+
+                    let r = WorkUnitResult {
+                        work_unit: unit,
+                        rows: vec![],
+                    };
+                    let ev = RenderEvent::RowsReady(r);
+                    send_result.send(ev).unwrap();
                 }
                 println!("Local worker finished job");
                 drop(wg);
@@ -236,16 +257,28 @@ impl Worker for LocalWorker {
 }
 
 pub struct ConsoleResultReporter {
-    sender: Sender<WorkUnitResult>,
+    sender: Sender<RenderEvent>,
 }
 
 impl ConsoleResultReporter {
     pub fn new() -> ConsoleResultReporter {
-        let (s, r): (Sender<WorkUnitResult>, Receiver<WorkUnitResult>) = unbounded();
+        let (s, r): (Sender<RenderEvent>, Receiver<RenderEvent>) = unbounded();
 
         thread::spawn(move || {
             while let Ok(result) = r.recv() {
-                println!("ConsoleResultReporter: got result for job ID {:?}", result.work_unit.job_id);
+                match result {
+                    RenderEvent::ImageInfo { width, height } => {
+                        println!("ConsoleResultReporter: image {} x {} pixels",
+                                 width, height);
+                    },
+                    RenderEvent::RowsReady(unit_result) => {
+                        println!("ConsoleResultReporter: image fragment done, {} rows",
+                                 unit_result.work_unit.row_end - unit_result.work_unit.row_start + 1);
+                    },
+                    RenderEvent::RenderingFinished => {
+                        println!("ConsoleResultReporter: rendering finished");
+                    }
+                }
             }
         });
 
@@ -254,7 +287,7 @@ impl ConsoleResultReporter {
         }
     }
 
-    pub fn sender(&self) -> Sender<WorkUnitResult> {
+    pub fn sender(&self) -> Sender<RenderEvent> {
         self.sender.clone()
     }
 }
