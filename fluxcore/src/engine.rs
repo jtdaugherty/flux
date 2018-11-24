@@ -127,8 +127,10 @@ impl RenderManager {
         let (s, r): (Sender<Option<(Job, Sender<()>)>>, Receiver<Option<(Job, Sender<()>)>>) = unbounded();
 
         let handle = thread::spawn(move || {
+            println!("Render manager: awaiting job");
+
             while let Ok(Some((job, notify_done))) = r.recv() {
-                println!("Render manager thread: got job {:?}", job.id);
+                println!("Render manager: got job {:?}", job.id);
 
                 let (ws, wr) = unbounded();
                 let wg = WaitGroup::new();
@@ -137,23 +139,23 @@ impl RenderManager {
                     ws.send(Some(u)).unwrap();
                 }
 
-                println!("Render manager thread: sent all work units");
+                println!("Render manager: work queue ready, sending job to workers");
 
                 workers.iter().for_each(|worker| {
                     ws.send(None).unwrap();
                     worker.send(job, wr.clone(), result_sender.clone(), wg.clone());
                 });
 
-                println!("Render manager thread: waiting on wait group");
+                println!("Render manager: waiting for job completion");
 
                 wg.wait();
 
-                println!("Render manager thread: done, notifying job handle");
+                println!("Render manager: job complete");
 
                 notify_done.send(()).unwrap();
             }
 
-            println!("Render manager shutting down");
+            println!("Render manager: shutting down");
         });
 
         RenderManager {
