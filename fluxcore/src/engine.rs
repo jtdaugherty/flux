@@ -14,6 +14,14 @@ use color::Color;
 #[derive(Copy)]
 pub struct JobID(usize, usize);
 
+const ENGINE_DEBUG: bool = false;
+
+fn d_println(s: String) {
+    if ENGINE_DEBUG {
+        println!("{}", s);
+    }
+}
+
 pub struct JobIDAllocator {
     allocator_id: usize,
     next_id: usize,
@@ -133,10 +141,10 @@ impl RenderManager {
         let (s, r): (Sender<Option<(Job, Sender<()>)>>, Receiver<Option<(Job, Sender<()>)>>) = unbounded();
 
         let handle = thread::spawn(move || {
-            println!("Render manager: awaiting job");
+            d_println(format!("Render manager: awaiting job"));
 
             while let Ok(Some((job, notify_done))) = r.recv() {
-                println!("Render manager: got job {:?}", job.id);
+                d_println(format!("Render manager: got job {:?}", job.id));
 
                 let info_event = RenderEvent::ImageInfo {
                     width: job.scene_data.image_width,
@@ -151,25 +159,25 @@ impl RenderManager {
                     ws.send(Some(u)).unwrap();
                 }
 
-                println!("Render manager: work queue ready, sending job to workers");
+                d_println(format!("Render manager: work queue ready, sending job to workers"));
 
                 workers.iter().for_each(|worker| {
                     ws.send(None).unwrap();
                     worker.send(job, wr.clone(), result_sender.clone(), wg.clone());
                 });
 
-                println!("Render manager: waiting for job completion");
+                d_println(format!("Render manager: waiting for job completion"));
 
                 wg.wait();
 
-                println!("Render manager: job complete");
+                d_println(format!("Render manager: job complete"));
 
                 result_sender.send(RenderEvent::RenderingFinished).unwrap();
 
                 notify_done.send(()).unwrap();
             }
 
-            println!("Render manager: shutting down");
+            d_println(format!("Render manager: shutting down"));
         });
 
         RenderManager {
@@ -215,12 +223,12 @@ impl LocalWorker {
 
         let handle = thread::spawn(move || {
             while let Ok(Some((job, recv_unit, send_result, wg))) = r.recv() {
-                println!("Local worker: got job {:?}", job.id);
+                d_println(format!("Local worker: got job {:?}", job.id));
                 // TODO build scene from scene data
                 // TODO generate sample data
                 while let Ok(Some(unit)) = recv_unit.recv() {
                     // TODO actually do the work and send the result
-                    println!("Local worker: got work unit {:?}", unit);
+                    d_println(format!("Local worker: got work unit {:?}", unit));
 
                     let r = WorkUnitResult {
                         work_unit: unit,
@@ -229,11 +237,11 @@ impl LocalWorker {
                     let ev = RenderEvent::RowsReady(r);
                     send_result.send(ev).unwrap();
                 }
-                println!("Local worker finished job");
+                d_println(format!("Local worker finished job"));
                 drop(wg);
             }
 
-            println!("Local worker shutting down");
+            d_println(format!("Local worker shutting down"));
         });
 
         LocalWorker {
@@ -268,15 +276,15 @@ impl ConsoleResultReporter {
             while let Ok(result) = r.recv() {
                 match result {
                     RenderEvent::ImageInfo { width, height } => {
-                        println!("ConsoleResultReporter: image {} x {} pixels",
-                                 width, height);
+                        d_println(format!("ConsoleResultReporter: image {} x {} pixels",
+                                          width, height));
                     },
                     RenderEvent::RowsReady(unit_result) => {
-                        println!("ConsoleResultReporter: image fragment done, {} rows",
-                                 unit_result.work_unit.row_end - unit_result.work_unit.row_start + 1);
+                        d_println(format!("ConsoleResultReporter: image fragment done, {} rows",
+                                          unit_result.work_unit.row_end - unit_result.work_unit.row_start + 1));
                     },
                     RenderEvent::RenderingFinished => {
-                        println!("ConsoleResultReporter: rendering finished");
+                        d_println(format!("ConsoleResultReporter: rendering finished"));
                     }
                 }
             }
