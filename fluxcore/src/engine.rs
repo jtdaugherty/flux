@@ -98,7 +98,15 @@ pub struct RenderManager {
     thread_handle: thread::JoinHandle<()>,
 }
 
-pub struct JobSender(Sender<Option<(Job, Receiver<Option<WorkUnit>>, Sender<WorkUnitResult>, WaitGroup)>>);
+pub struct WorkerHandle {
+    sender: Sender<Option<(Job, Receiver<Option<WorkUnit>>, Sender<WorkUnitResult>, WaitGroup)>>,
+}
+
+impl WorkerHandle {
+    pub fn send(&self, j: Job, r: Receiver<Option<WorkUnit>>, s: Sender<WorkUnitResult>, wg: WaitGroup) {
+        self.sender.send(Some((j, r, s, wg))).unwrap();
+    }
+}
 
 pub struct JobHandle {
     waiter: Receiver<()>,
@@ -111,9 +119,9 @@ impl JobHandle {
 }
 
 impl RenderManager {
-    pub fn new(senders: Vec<JobSender>, result_sender: Sender<WorkUnitResult>) -> RenderManager {
-        if senders.len() == 0 {
-            panic!("RenderManager::new: must provide at least one job sender");
+    pub fn new(workers: Vec<WorkerHandle>, result_sender: Sender<WorkUnitResult>) -> RenderManager {
+        if workers.len() == 0 {
+            panic!("RenderManager::new: must provide at least one worker handle");
         }
 
         let (s, r): (Sender<Option<(Job, Sender<()>)>>, Receiver<Option<(Job, Sender<()>)>>) = unbounded();
@@ -131,9 +139,9 @@ impl RenderManager {
 
                 println!("Render manager thread: sent all work units");
 
-                senders.iter().for_each(|sender| {
+                workers.iter().for_each(|worker| {
                     ws.send(None).unwrap();
-                    sender.0.send(Some((job, wr.clone(), result_sender.clone(), wg.clone()))).unwrap();
+                    worker.send(job, wr.clone(), result_sender.clone(), wg.clone());
                 });
 
                 println!("Render manager thread: waiting on wait group");
@@ -176,7 +184,8 @@ impl RenderManager {
 }
 
 pub trait Worker {
-    fn sender(&self) -> JobSender;
+    fn handle(&self) -> WorkerHandle;
+    fn stop(self);
 }
 
 pub struct LocalWorker {
@@ -209,16 +218,18 @@ impl LocalWorker {
             thread_handle: handle,
         }
     }
-
-    pub fn stop(self) {
-        self.sender.send(None).unwrap();
-        self.thread_handle.join().unwrap();
-    }
 }
 
 impl Worker for LocalWorker {
-    fn sender(&self) -> JobSender {
-        JobSender(self.sender.clone())
+    fn handle(&self) -> WorkerHandle {
+        WorkerHandle {
+            sender: self.sender.clone(),
+        }
+    }
+
+    fn stop(self) {
+        self.sender.send(None).unwrap();
+        self.thread_handle.join().unwrap();
     }
 }
 

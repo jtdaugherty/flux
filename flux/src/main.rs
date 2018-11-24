@@ -26,7 +26,7 @@ fn main() {
 
     let worker = LocalWorker::new();
     let reporter = ConsoleResultReporter::new();
-    let mut manager = RenderManager::new(vec![worker.sender()], reporter.sender());
+    let mut manager = RenderManager::new(vec![worker.handle()], reporter.sender());
 
     let job = manager.schedule_job(s, c);
     let job2 = manager.schedule_job(s2, c2);
