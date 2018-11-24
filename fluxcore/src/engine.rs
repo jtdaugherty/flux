@@ -276,15 +276,15 @@ impl ConsoleResultReporter {
             while let Ok(result) = r.recv() {
                 match result {
                     RenderEvent::ImageInfo { width, height } => {
-                        d_println(format!("ConsoleResultReporter: image {} x {} pixels",
-                                          width, height));
+                        println!("ConsoleResultReporter: image {} x {} pixels",
+                                 width, height);
                     },
                     RenderEvent::RowsReady(unit_result) => {
-                        d_println(format!("ConsoleResultReporter: image fragment done, {} rows",
-                                          unit_result.work_unit.row_end - unit_result.work_unit.row_start + 1));
+                        println!("ConsoleResultReporter: image fragment done, {} rows",
+                                 unit_result.work_unit.row_end - unit_result.work_unit.row_start + 1);
                     },
                     RenderEvent::RenderingFinished => {
-                        d_println(format!("ConsoleResultReporter: rendering finished"));
+                        println!("ConsoleResultReporter: rendering finished");
                     }
                 }
             }
