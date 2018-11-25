@@ -2,7 +2,7 @@
 extern crate fluxcore;
 extern crate nalgebra;
 
-use nalgebra::{Point3};
+use nalgebra::{Point3, Vector3};
 
 use fluxcore::manager::*;
 use fluxcore::job::JobConfiguration;
@@ -14,14 +14,24 @@ fn main() {
     let c = JobConfiguration {
         rows_per_work_unit: 100,
         max_trace_depth: 1,
-        sample_root: 1,
+        sample_root: 2,
     };
     let s = SceneData {
         scene_name: String::from("test_scene"),
         output_settings: OutputSettings {
-            image_width: 800,
-            image_height: 600,
+            image_width: 400,
+            image_height: 400,
             pixel_size: 1.0,
+        },
+        camera_settings: CameraSettings::new(
+                             Point3::new(0.0, 1.5, -3.0),
+                             Point3::new(0.0, 0.0, 0.0),
+                             Vector3::new(0.0, 1.0, 0.0)),
+        camera_data: CameraData {
+            zoom_factor: 1.0,
+            view_plane_distance: 100.0,
+            focal_distance: 20.0,
+            lens_radius: 0.0,
         },
         background: Color::black(),
         shapes: vec![
@@ -29,9 +39,19 @@ fn main() {
                 shape_type: ShapeType::Sphere,
                 content: ShapeContent {
                     sphere: Sphere {
-                        center: Point3::new(0.0, 0.0, 0.0),
+                        center: Point3::new(0.0, 1.0, 0.0),
                         radius: 1.0,
-                        color: Color::new(1.0, 1.0, 1.0),
+                        color: Color::new(1.0, 0.0, 0.0),
+                    }
+                },
+            },
+            ShapeData {
+                shape_type: ShapeType::Plane,
+                content: ShapeContent {
+                    plane: Plane {
+                        point: Point3::new(0.0, 0.0, 0.0),
+                        normal: Vector3::new(0.0, 1.0, 0.0),
+                        color: Color::new(0.0, 0.0, 1.0),
                     }
                 },
             },

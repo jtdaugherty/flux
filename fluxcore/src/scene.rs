@@ -1,7 +1,28 @@
 
+use nalgebra::{Vector3, Point3};
+
 use color::Color;
 use common::{Ray, Intersectable, Hit};
 use shapes::*;
+
+#[derive(Clone)]
+pub struct CameraSettings {
+    pub eye: Point3<f64>,
+    pub look_at: Point3<f64>,
+    pub up: Vector3<f64>,
+    pub u: Vector3<f64>,
+    pub v: Vector3<f64>,
+    pub w: Vector3<f64>,
+}
+
+impl CameraSettings {
+    pub fn new(eye: Point3<f64>, look_at: Point3<f64>, up: Vector3<f64>) -> CameraSettings {
+        let w = (eye - look_at).normalize();
+        let u = up.cross(&w).normalize();
+        let v = w.cross(&u);
+        CameraSettings { eye, look_at, up, u, v, w }
+    }
+}
 
 // SceneData can contain only data, not heap references to trait
 // objects, etc. The idea is that when we're ready to start rendering a
@@ -12,6 +33,16 @@ pub struct SceneData {
     pub output_settings: OutputSettings,
     pub background: Color,
     pub shapes: Vec<ShapeData>,
+    pub camera_settings: CameraSettings,
+    pub camera_data: CameraData,
+}
+
+#[derive(Clone)]
+pub struct CameraData {
+    pub zoom_factor: f64,
+    pub view_plane_distance: f64,
+    pub focal_distance: f64,
+    pub lens_radius: f64,
 }
 
 #[derive(Clone)]
@@ -57,6 +88,8 @@ pub struct Scene {
     pub output_settings: OutputSettings,
     pub background: Color,
     pub shapes: Vec<Box<Intersectable>>,
+    pub camera_settings: CameraSettings,
+    pub camera_data: CameraData,
 }
 
 impl Scene {
@@ -83,6 +116,8 @@ impl Scene {
             background: sd.background,
             scene_name: sd.scene_name,
             shapes,
+            camera_settings: sd.camera_settings,
+            camera_data: sd.camera_data,
         }
     }
 

@@ -1,33 +1,15 @@
 
-use nalgebra::{Vector3, Point3};
+use nalgebra::{Vector3};
 use sampling::MasterSampleSets;
 use samplers::Sampler;
 use color::Color;
-use scene::Scene;
+use scene::{Scene, CameraSettings};
 use common::Ray;
 use manager::WorkUnitResult;
 use job::{JobConfiguration, WorkUnit};
 use rayon::prelude::*;
 
-pub struct CameraSettings {
-    pub eye: Point3<f64>,
-    pub look_at: Point3<f64>,
-    pub up: Vector3<f64>,
-    pub u: Vector3<f64>,
-    pub v: Vector3<f64>,
-    pub w: Vector3<f64>,
-}
-
-impl CameraSettings {
-    pub fn new(eye: Point3<f64>, look_at: Point3<f64>, up: Vector3<f64>) -> CameraSettings {
-        let w = (eye - look_at).normalize();
-        let u = up.cross(&w).normalize();
-        let v = w.cross(&u);
-        CameraSettings { eye, look_at, up, u, v, w }
-    }
-}
-
-pub struct ThinLensCamera {
+pub struct Camera {
     pub settings: CameraSettings,
     samples: MasterSampleSets,
     config: JobConfiguration,
@@ -37,13 +19,13 @@ pub struct ThinLensCamera {
     pub lens_radius: f64,
 }
 
-impl ThinLensCamera {
+impl Camera {
     pub fn new(settings: CameraSettings, config: JobConfiguration, num_sets: usize,
                zoom_factor: f64, view_plane_distance: f64, focal_distance: f64,
-               lens_radius: f64) -> ThinLensCamera {
+               lens_radius: f64) -> Camera {
         let mut s = Sampler::new();
 
-        ThinLensCamera {
+        Camera {
             settings,
             config,
             zoom_factor,

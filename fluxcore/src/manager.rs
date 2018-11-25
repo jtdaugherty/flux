@@ -4,10 +4,11 @@ use crossbeam::sync::WaitGroup;
 use std::fs::File;
 use std::thread;
 
-use scene::SceneData;
+use scene::{Scene, SceneData};
 use color::Color;
 use image::Image;
 use job::{JobConfiguration, Job, JobIDAllocator, WorkUnit};
+use trace::Camera;
 
 const ENGINE_DEBUG: bool = false;
 
@@ -147,19 +148,24 @@ impl LocalWorker {
         let handle = thread::spawn(move || {
             while let Ok(Some((job, recv_unit, send_result, wg))) = r.recv() {
                 d_println(format!("Local worker: got job {:?}", job.id));
-                // TODO build scene from scene data
-                // TODO generate sample data
+
+                let scene = Scene::from_data(job.scene_data);
+                let camera = Camera::new(scene.camera_settings.clone(),
+                                         job.config,
+                                         scene.output_settings.image_width,
+                                         scene.camera_data.zoom_factor,
+                                         scene.camera_data.view_plane_distance,
+                                         scene.camera_data.focal_distance,
+                                         scene.camera_data.lens_radius);
+
                 while let Ok(Some(unit)) = recv_unit.recv() {
-                    // TODO actually do the work and send the result
                     d_println(format!("Local worker: got work unit {:?}", unit));
 
-                    let r = WorkUnitResult {
-                        work_unit: unit,
-                        rows: vec![],
-                    };
+                    let r = camera.render(&scene, unit);
                     let ev = RenderEvent::RowsReady(r);
                     send_result.send(Some(ev)).unwrap();
                 }
+
                 d_println(format!("Local worker finished job"));
                 drop(wg);
             }
