@@ -9,4 +9,4 @@ pub mod color;
 pub mod shapes;
 pub mod sampling;
 pub mod scene;
-pub mod engine;
+pub mod manager;
