@@ -72,30 +72,6 @@ pub struct JobConfiguration {
     pub rows_per_work_unit: usize,
 }
 
-pub fn work_units(j: &Job) -> Vec<WorkUnit> {
-    if j.config.rows_per_work_unit <= 0 {
-        panic!("Job row per work unit count invalid: {}",
-               j.config.rows_per_work_unit);
-    }
-
-    let mut us = Vec::new();
-    let mut i = 0;
-
-    while i < j.scene_data.output_settings.image_height - 1 {
-        let remaining_rows = j.scene_data.output_settings.image_height - i;
-        let num_rows = std::cmp::min(j.config.rows_per_work_unit, remaining_rows);
-        let u = WorkUnit {
-            row_start: i,
-            row_end: i + num_rows - 1,
-            job_id: j.id,
-        };
-        us.push(u);
-        i += num_rows;
-    }
-
-    us
-}
-
 // A job provides all the resources and configuration needed to render a
 // scene.
 #[derive(Clone)]
@@ -104,6 +80,32 @@ pub struct Job {
     pub id: JobID,
     pub scene_data: SceneData,
     pub config: JobConfiguration,
+}
+
+impl Job {
+    pub fn work_units(&self) -> Vec<WorkUnit> {
+        if self.config.rows_per_work_unit <= 0 {
+            panic!("Job row per work unit count invalid: {}",
+                   self.config.rows_per_work_unit);
+        }
+
+        let mut us = Vec::new();
+        let mut i = 0;
+
+        while i < self.scene_data.output_settings.image_height - 1 {
+            let remaining_rows = self.scene_data.output_settings.image_height - i;
+            let num_rows = std::cmp::min(self.config.rows_per_work_unit, remaining_rows);
+            let u = WorkUnit {
+                row_start: i,
+                row_end: i + num_rows - 1,
+                job_id: self.id,
+            };
+            us.push(u);
+            i += num_rows;
+        }
+
+        us
+    }
 }
 
 pub struct RenderManager {
@@ -155,7 +157,7 @@ impl RenderManager {
                 let (ws, wr) = unbounded();
                 let wg = WaitGroup::new();
 
-                for u in work_units(&job) {
+                for u in job.work_units() {
                     ws.send(Some(u)).unwrap();
                 }
 
