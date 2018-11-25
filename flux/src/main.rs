@@ -2,7 +2,7 @@
 extern crate fluxcore;
 
 use fluxcore::engine::*;
-use fluxcore::scene::SceneData;
+use fluxcore::scene::{SceneData, OutputSettings};
 
 fn main() {
     let c = JobConfiguration {
@@ -11,8 +11,10 @@ fn main() {
         sample_root: 1,
     };
     let s = SceneData {
-        image_width: 800,
-        image_height: 600,
+        output_settings: OutputSettings {
+            image_width: 800,
+            image_height: 600,
+        },
     };
 
     println!("Starting local worker");

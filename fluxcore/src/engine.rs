@@ -81,8 +81,8 @@ pub fn work_units(j: &Job) -> Vec<WorkUnit> {
     let mut us = Vec::new();
     let mut i = 0;
 
-    while i < j.scene_data.image_height - 1 {
-        let remaining_rows = j.scene_data.image_height - i;
+    while i < j.scene_data.output_settings.image_height - 1 {
+        let remaining_rows = j.scene_data.output_settings.image_height - i;
         let num_rows = std::cmp::min(j.config.rows_per_work_unit, remaining_rows);
         let u = WorkUnit {
             row_start: i,
@@ -147,8 +147,8 @@ impl RenderManager {
                 d_println(format!("Render manager: got job {:?}", job.id));
 
                 let info_event = RenderEvent::ImageInfo {
-                    width: job.scene_data.image_width,
-                    height: job.scene_data.image_height,
+                    width: job.scene_data.output_settings.image_width,
+                    height: job.scene_data.output_settings.image_height,
                 };
                 result_sender.send(info_event).unwrap();
 
