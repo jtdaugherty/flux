@@ -1,9 +1,12 @@
 
 extern crate fluxcore;
+extern crate nalgebra;
+
+use nalgebra::{Point3};
 
 use fluxcore::manager::*;
 use fluxcore::job::JobConfiguration;
-use fluxcore::scene::{SceneData, OutputSettings};
+use fluxcore::scene::*;
 use fluxcore::color::Color;
 
 fn main() {
@@ -19,6 +22,18 @@ fn main() {
             pixel_size: 1.0,
         },
         background: Color::black(),
+        shapes: vec![
+            ShapeData {
+                shape_type: ShapeType::Sphere,
+                content: ShapeContent {
+                    sphere: Sphere {
+                        center: Point3::new(0.0, 0.0, 0.0),
+                        radius: 1.0,
+                        color: Color::new(1.0, 1.0, 1.0),
+                    }
+                },
+            },
+        ],
     };
 
     println!("Starting local worker");

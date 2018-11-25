@@ -83,7 +83,7 @@ impl RenderManager {
 
                 workers.iter().for_each(|worker| {
                     ws.send(None).unwrap();
-                    worker.send(job, wr.clone(), result_sender.clone(), wg.clone());
+                    worker.send(job.clone(), wr.clone(), result_sender.clone(), wg.clone());
                 });
 
                 d_println(format!("Render manager: waiting for job completion"));

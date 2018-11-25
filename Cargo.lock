@@ -110,6 +110,7 @@ name = "flux"
 version = "0.1.0"
 dependencies = [
  "fluxcore 0.1.0",
+ "nalgebra 0.16.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "samplers 0.1.0",
 ]
 
