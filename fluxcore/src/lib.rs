@@ -3,6 +3,7 @@ extern crate nalgebra;
 extern crate samplers;
 extern crate rand;
 extern crate crossbeam;
+extern crate rayon;
 
 pub mod job;
 pub mod color;

@@ -8,3 +8,4 @@ nalgebra = "0.16.5"
 rand = "0.5.5"
 samplers = { path = "../samplers" }
 crossbeam = "0.5.0"
+rayon = "1.0.3"
