@@ -16,6 +16,7 @@ pub struct SceneData {
 pub struct OutputSettings {
     pub image_width: usize,
     pub image_height: usize,
+    pub pixel_size: f64,
 }
 
 pub struct Scene {

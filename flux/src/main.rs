@@ -16,6 +16,7 @@ fn main() {
         output_settings: OutputSettings {
             image_width: 800,
             image_height: 600,
+            pixel_size: 1.0,
         },
         background: Color::black(),
     };
