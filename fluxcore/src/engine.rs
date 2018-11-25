@@ -1,18 +1,11 @@
 
-use rand::Rng;
 use crossbeam::channel::{Sender, Receiver, unbounded};
 use crossbeam::sync::WaitGroup;
 use std::thread;
 
 use scene::SceneData;
 use color::Color;
-
-#[derive(Debug)]
-#[derive(PartialEq)]
-#[derive(Eq)]
-#[derive(Clone)]
-#[derive(Copy)]
-pub struct JobID(usize, usize);
+use job::{JobConfiguration, Job, JobIDAllocator, WorkUnit};
 
 const ENGINE_DEBUG: bool = false;
 
@@ -20,37 +13,6 @@ fn d_println(s: String) {
     if ENGINE_DEBUG {
         println!("{}", s);
     }
-}
-
-pub struct JobIDAllocator {
-    allocator_id: usize,
-    next_id: usize,
-}
-
-impl JobIDAllocator {
-    pub fn new() -> JobIDAllocator {
-        let mut trng = rand::thread_rng();
-
-        JobIDAllocator {
-            allocator_id: trng.gen(),
-            next_id: 0,
-        }
-    }
-
-    pub fn next(&mut self) -> JobID {
-        let j = JobID(self.allocator_id, self.next_id);
-        self.next_id += 1;
-        j
-    }
-}
-
-#[derive(Debug)]
-#[derive(Clone)]
-#[derive(Copy)]
-pub struct WorkUnit {
-    row_start: usize,
-    row_end: usize,
-    job_id: JobID,
 }
 
 pub enum RenderEvent {
@@ -62,50 +24,6 @@ pub enum RenderEvent {
 pub struct WorkUnitResult {
     pub work_unit: WorkUnit,
     pub rows: Vec<Vec<Color>>,
-}
-
-#[derive(Clone)]
-#[derive(Copy)]
-pub struct JobConfiguration {
-    pub sample_root: usize,
-    pub max_trace_depth: usize,
-    pub rows_per_work_unit: usize,
-}
-
-// A job provides all the resources and configuration needed to render a
-// scene.
-#[derive(Clone)]
-#[derive(Copy)]
-pub struct Job {
-    pub id: JobID,
-    pub scene_data: SceneData,
-    pub config: JobConfiguration,
-}
-
-impl Job {
-    pub fn work_units(&self) -> Vec<WorkUnit> {
-        if self.config.rows_per_work_unit <= 0 {
-            panic!("Job row per work unit count invalid: {}",
-                   self.config.rows_per_work_unit);
-        }
-
-        let mut us = Vec::new();
-        let mut i = 0;
-
-        while i < self.scene_data.output_settings.image_height - 1 {
-            let remaining_rows = self.scene_data.output_settings.image_height - i;
-            let num_rows = std::cmp::min(self.config.rows_per_work_unit, remaining_rows);
-            let u = WorkUnit {
-                row_start: i,
-                row_end: i + num_rows - 1,
-                job_id: self.id,
-            };
-            us.push(u);
-            i += num_rows;
-        }
-
-        us
-    }
 }
 
 pub struct RenderManager {

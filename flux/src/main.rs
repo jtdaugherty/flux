@@ -2,6 +2,7 @@
 extern crate fluxcore;
 
 use fluxcore::engine::*;
+use fluxcore::job::JobConfiguration;
 use fluxcore::scene::{SceneData, OutputSettings};
 
 fn main() {
