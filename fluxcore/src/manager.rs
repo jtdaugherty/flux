@@ -257,23 +257,22 @@ impl ImageBuilder {
                 _ => panic!("ImageBuilder: got unexpected message"),
             };
 
-            println!("ImageBuilder: image {} x {} pixels",
-                     width, height);
+            d_println(format!("ImageBuilder: image {} x {} pixels", width, height));
 
             let mut img = Image::new(width, height);
 
             while let Ok(Some(result)) = r.recv() {
                 match result {
                     RenderEvent::RowsReady(unit_result) => {
-                        println!("ImageBuilder: image fragment done, {} rows",
-                                 unit_result.work_unit.row_end - unit_result.work_unit.row_start + 1);
+                        d_println(format!("ImageBuilder: image fragment done, {} rows",
+                                          unit_result.work_unit.row_end - unit_result.work_unit.row_start + 1));
 
                         for (i, row) in unit_result.rows.into_iter().enumerate() {
                             img.set_row(i + unit_result.work_unit.row_start, row);
                         }
                     },
                     RenderEvent::RenderingFinished => {
-                        println!("ImageBuilder: rendering finished");
+                        d_println(format!("ImageBuilder: rendering finished"));
                         let filename = scene_name.clone() + ".ppm";
                         let mut output_file = File::create(filename).unwrap();
                         img.write(&mut output_file);
