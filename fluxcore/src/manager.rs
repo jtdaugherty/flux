@@ -168,7 +168,10 @@ impl LocalWorker {
                 while let Ok(Some(unit)) = recv_unit.recv() {
                     d_println(format!("Local worker: got work unit {:?}", unit));
 
+                    d_println(format!("Starting render"));
                     let r = camera.render(&scene, unit);
+                    d_println(format!("render done"));
+
                     let ev = RenderEvent::RowsReady(r);
                     send_result.send(Some(ev)).unwrap();
                 }
