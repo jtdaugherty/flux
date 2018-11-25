@@ -7,6 +7,7 @@ use nalgebra::{Point3};
 use fluxcore::manager::*;
 use fluxcore::job::JobConfiguration;
 use fluxcore::scene::*;
+use fluxcore::shapes::*;
 use fluxcore::color::Color;
 
 fn main() {

@@ -1,7 +1,7 @@
 
-use nalgebra::{Vector3, Point3};
 use color::Color;
 use common::Intersectable;
+use shapes::*;
 
 // SceneData can contain only data, not heap references to trait
 // objects, etc. The idea is that when we're ready to start rendering a
@@ -49,22 +49,6 @@ impl Clone for ShapeData {
 pub union ShapeContent {
     pub sphere: Sphere,
     pub plane: Plane,
-}
-
-#[derive(Clone)]
-#[derive(Copy)]
-pub struct Sphere {
-    pub center: Point3<f64>,
-    pub radius: f64,
-    pub color: Color,
-}
-
-#[derive(Clone)]
-#[derive(Copy)]
-pub struct Plane {
-    pub point: Point3<f64>,
-    pub normal: Vector3<f64>,
-    pub color: Color,
 }
 
 pub struct Scene {
