@@ -10,12 +10,19 @@ use image::Image;
 use job::{JobConfiguration, Job, JobIDAllocator, WorkUnit};
 use trace::Camera;
 
-const ENGINE_DEBUG: bool = false;
+const DEBUG: bool = false;
+
+use std::time::{SystemTime, UNIX_EPOCH, Duration};
 
 fn d_println(s: String) {
-    if ENGINE_DEBUG {
-        println!("{}", s);
+    if DEBUG {
+        let t = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        println!("{} {}", to_ms(t), s);
     }
+}
+
+fn to_ms(d: Duration) -> u64 {
+    d.as_secs() * 1000 + d.subsec_nanos() as u64 / 1_000_000
 }
 
 pub enum RenderEvent {
