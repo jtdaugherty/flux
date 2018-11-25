@@ -42,8 +42,10 @@ pub struct RenderManager {
     thread_handle: thread::JoinHandle<()>,
 }
 
+type WorkerRequest = Option<(Job, Receiver<Option<WorkUnit>>, Sender<Option<RenderEvent>>, WaitGroup)>;
+
 pub struct WorkerHandle {
-    sender: Sender<Option<(Job, Receiver<Option<WorkUnit>>, Sender<Option<RenderEvent>>, WaitGroup)>>,
+    sender: Sender<WorkerRequest>,
 }
 
 impl WorkerHandle {
@@ -144,13 +146,13 @@ pub trait Worker {
 }
 
 pub struct LocalWorker {
-    sender: Sender<Option<(Job, Receiver<Option<WorkUnit>>, Sender<Option<RenderEvent>>, WaitGroup)>>,
+    sender: Sender<WorkerRequest>,
     thread_handle: thread::JoinHandle<()>,
 }
 
 impl LocalWorker {
     pub fn new() -> LocalWorker {
-        let (s, r): (Sender<Option<(Job, Receiver<Option<WorkUnit>>, Sender<Option<RenderEvent>>, WaitGroup)>>, Receiver<Option<(Job, Receiver<Option<WorkUnit>>, Sender<Option<RenderEvent>>, WaitGroup)>>) = unbounded();
+        let (s, r): (Sender<WorkerRequest>, Receiver<WorkerRequest>) = unbounded();
 
         let handle = thread::spawn(move || {
             while let Ok(Some((job, recv_unit, send_result, wg))) = r.recv() {
