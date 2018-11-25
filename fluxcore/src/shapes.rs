@@ -26,7 +26,7 @@ impl Intersectable for Plane {
 
         if t > T_MIN {
             Some(Hit {
-                tmin: t,
+                distance: t,
                 normal: self.normal,
                 local_hit_point: r.origin + t * r.direction,
                 color: self.color,
@@ -54,7 +54,7 @@ impl Intersectable for Sphere {
 
             if t > T_MIN {
                 Some(Hit {
-                    tmin: t,
+                    distance: t,
                     normal: (temp + t * r.direction) / self.radius,
                     local_hit_point: r.origin + t * r.direction,
                     color: self.color,
@@ -63,7 +63,7 @@ impl Intersectable for Sphere {
                 let t2 = (-b + e) / denom;
                 if t2 > T_MIN {
                     Some(Hit {
-                        tmin: t2,
+                        distance: t2,
                         normal: (temp + t2 * r.direction) / self.radius,
                         local_hit_point: r.origin + t2 * r.direction,
                         color: self.color,

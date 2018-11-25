@@ -93,7 +93,7 @@ impl ThinLensCamera {
                         origin: self.settings.eye + lpx * self.settings.u + lpy * self.settings.v,
                     };
 
-                    // color += scene.color(&r, index, &samples.hemi_sets[sample_set_indexes[col]], 0);
+                    color += s.shade(r);
                 }
 
                 color *= pixel_denom;

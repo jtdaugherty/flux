@@ -1,6 +1,6 @@
 
 use color::Color;
-use common::Intersectable;
+use common::{Ray, Intersectable, Hit};
 use shapes::*;
 
 // SceneData can contain only data, not heap references to trait
@@ -80,6 +80,19 @@ impl Scene {
             output_settings: sd.output_settings,
             background: sd.background,
             shapes,
+        }
+    }
+
+    fn hit(&self, r: Ray) -> Option<Hit> {
+        self.shapes.iter()
+            .filter_map(|o| o.hit(&r))
+            .min_by(Hit::compare)
+    }
+
+    pub fn shade(&self, r: Ray) -> Color {
+        match self.hit(r) {
+            None => self.background,
+            Some(h) => h.color,
         }
     }
 }
