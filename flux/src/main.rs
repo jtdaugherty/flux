@@ -14,7 +14,7 @@ fn main() {
     let c = JobConfiguration {
         rows_per_work_unit: 100,
         max_trace_depth: 1,
-        sample_root: 2,
+        sample_root: 1,
     };
     let s = SceneData {
         scene_name: String::from("test_scene"),
