@@ -6,6 +6,7 @@ extern crate crossbeam;
 extern crate rayon;
 
 pub mod job;
+pub mod image;
 pub mod color;
 pub mod shapes;
 pub mod sampling;
