@@ -1,6 +1,7 @@
 
 use nalgebra::{Vector3, Point3};
 use color::Color;
+use common::Intersectable;
 
 // SceneData can contain only data, not heap references to trait
 // objects, etc. The idea is that when we're ready to start rendering a
@@ -69,11 +70,30 @@ pub struct Plane {
 pub struct Scene {
     pub output_settings: OutputSettings,
     pub background: Color,
+    pub shapes: Vec<Box<Intersectable>>,
 }
 
 pub fn scene_from_data(sd: SceneData) -> Scene {
+    let shapes: Vec<Box<Intersectable>> = sd.shapes.iter().map(|sd| {
+        match sd.shape_type {
+            ShapeType::Sphere => {
+                unsafe {
+                    let b: Box<Intersectable> = Box::new(sd.content.sphere);
+                    b
+                }
+            },
+            ShapeType::Plane => {
+                unsafe {
+                    let b: Box<Intersectable> = Box::new(sd.content.plane);
+                    b
+                }
+            },
+        }
+    }).collect();
+
     Scene {
         output_settings: sd.output_settings,
         background: sd.background,
+        shapes,
     }
 }

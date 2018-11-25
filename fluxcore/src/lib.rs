@@ -12,3 +12,4 @@ pub mod scene;
 pub mod trace;
 pub mod constants;
 pub mod manager;
+pub mod common;

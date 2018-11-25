@@ -1,24 +1,8 @@
 
-use nalgebra::{Vector3, Point3};
-use color::Color;
+use nalgebra::{Vector3};
 use scene::{Sphere, Plane};
 use constants::*;
-
-pub struct Hit {
-    pub local_hit_point: Point3<f64>,
-    pub normal: Vector3<f64>,
-    pub color: Color,
-    pub tmin: f64,
-}
-
-pub struct Ray {
-    pub origin: Point3<f64>,
-    pub direction: Vector3<f64>,
-}
-
-pub trait Intersectable {
-    fn hit(&self, r: &Ray) -> Option<Hit>;
-}
+use common::*;
 
 impl Intersectable for Plane {
     fn hit(&self, r: &Ray) -> Option<Hit> {
