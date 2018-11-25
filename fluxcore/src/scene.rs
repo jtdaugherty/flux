@@ -57,27 +57,29 @@ pub struct Scene {
     pub shapes: Vec<Box<Intersectable>>,
 }
 
-pub fn scene_from_data(sd: SceneData) -> Scene {
-    let shapes: Vec<Box<Intersectable>> = sd.shapes.iter().map(|sd| {
-        match sd.shape_type {
-            ShapeType::Sphere => {
-                unsafe {
-                    let b: Box<Intersectable> = Box::new(sd.content.sphere);
-                    b
-                }
-            },
-            ShapeType::Plane => {
-                unsafe {
-                    let b: Box<Intersectable> = Box::new(sd.content.plane);
-                    b
-                }
-            },
-        }
-    }).collect();
+impl Scene {
+    pub fn from_data(sd: SceneData) -> Scene {
+        let shapes: Vec<Box<Intersectable>> = sd.shapes.iter().map(|sd| {
+            match sd.shape_type {
+                ShapeType::Sphere => {
+                    unsafe {
+                        let b: Box<Intersectable> = Box::new(sd.content.sphere);
+                        b
+                    }
+                },
+                ShapeType::Plane => {
+                    unsafe {
+                        let b: Box<Intersectable> = Box::new(sd.content.plane);
+                        b
+                    }
+                },
+            }
+        }).collect();
 
-    Scene {
-        output_settings: sd.output_settings,
-        background: sd.background,
-        shapes,
+        Scene {
+            output_settings: sd.output_settings,
+            background: sd.background,
+            shapes,
+        }
     }
 }
