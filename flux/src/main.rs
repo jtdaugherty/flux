@@ -4,6 +4,7 @@ extern crate fluxcore;
 use fluxcore::manager::*;
 use fluxcore::job::JobConfiguration;
 use fluxcore::scene::{SceneData, OutputSettings};
+use fluxcore::color::Color;
 
 fn main() {
     let c = JobConfiguration {
@@ -16,6 +17,7 @@ fn main() {
             image_width: 800,
             image_height: 600,
         },
+        background: Color::black(),
     };
 
     println!("Starting local worker");
