@@ -8,6 +8,7 @@ use shapes::*;
 // scene, we'll build a Scene from a SceneData.
 #[derive(Clone)]
 pub struct SceneData {
+    pub scene_name: String,
     pub output_settings: OutputSettings,
     pub background: Color,
     pub shapes: Vec<ShapeData>,
@@ -52,6 +53,7 @@ pub union ShapeContent {
 }
 
 pub struct Scene {
+    pub scene_name: String,
     pub output_settings: OutputSettings,
     pub background: Color,
     pub shapes: Vec<Box<Intersectable>>,
@@ -79,6 +81,7 @@ impl Scene {
         Scene {
             output_settings: sd.output_settings,
             background: sd.background,
+            scene_name: sd.scene_name,
             shapes,
         }
     }

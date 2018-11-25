@@ -17,6 +17,7 @@ fn main() {
         sample_root: 1,
     };
     let s = SceneData {
+        scene_name: String::from("test_scene"),
         output_settings: OutputSettings {
             image_width: 800,
             image_height: 600,
@@ -39,10 +40,10 @@ fn main() {
 
     println!("Starting local worker");
     let worker = LocalWorker::new();
-    let reporter = ConsoleResultReporter::new();
+    let image_builder = ImageBuilder::new();
 
     println!("Starting rendering manager");
-    let mut manager = RenderManager::new(vec![worker.handle()], reporter.sender());
+    let mut manager = RenderManager::new(vec![worker.handle()], image_builder.sender());
 
     println!("Sending job to rendering manager");
     let job = manager.schedule_job(s, c);
@@ -53,4 +54,5 @@ fn main() {
     println!("Shutting down");
     manager.stop();
     worker.stop();
+    image_builder.stop();
 }

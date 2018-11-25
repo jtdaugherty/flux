@@ -1,10 +1,12 @@
 
 use crossbeam::channel::{Sender, Receiver, unbounded};
 use crossbeam::sync::WaitGroup;
+use std::fs::File;
 use std::thread;
 
 use scene::SceneData;
 use color::Color;
+use image::Image;
 use job::{JobConfiguration, Job, JobIDAllocator, WorkUnit};
 
 const ENGINE_DEBUG: bool = false;
@@ -16,7 +18,7 @@ fn d_println(s: String) {
 }
 
 pub enum RenderEvent {
-    ImageInfo { width: usize, height: usize },
+    ImageInfo { scene_name: String, width: usize, height: usize },
     RowsReady(WorkUnitResult),
     RenderingFinished,
 }
@@ -33,11 +35,11 @@ pub struct RenderManager {
 }
 
 pub struct WorkerHandle {
-    sender: Sender<Option<(Job, Receiver<Option<WorkUnit>>, Sender<RenderEvent>, WaitGroup)>>,
+    sender: Sender<Option<(Job, Receiver<Option<WorkUnit>>, Sender<Option<RenderEvent>>, WaitGroup)>>,
 }
 
 impl WorkerHandle {
-    pub fn send(&self, j: Job, r: Receiver<Option<WorkUnit>>, s: Sender<RenderEvent>, wg: WaitGroup) {
+    pub fn send(&self, j: Job, r: Receiver<Option<WorkUnit>>, s: Sender<Option<RenderEvent>>, wg: WaitGroup) {
         self.sender.send(Some((j, r, s, wg))).unwrap();
     }
 }
@@ -53,7 +55,7 @@ impl JobHandle {
 }
 
 impl RenderManager {
-    pub fn new(workers: Vec<WorkerHandle>, result_sender: Sender<RenderEvent>) -> RenderManager {
+    pub fn new(workers: Vec<WorkerHandle>, result_sender: Sender<Option<RenderEvent>>) -> RenderManager {
         if workers.len() == 0 {
             panic!("RenderManager::new: must provide at least one worker handle");
         }
@@ -67,10 +69,11 @@ impl RenderManager {
                 d_println(format!("Render manager: got job {:?}", job.id));
 
                 let info_event = RenderEvent::ImageInfo {
+                    scene_name: job.scene_data.scene_name.clone(),
                     width: job.scene_data.output_settings.image_width,
                     height: job.scene_data.output_settings.image_height,
                 };
-                result_sender.send(info_event).unwrap();
+                result_sender.send(Some(info_event)).unwrap();
 
                 let (ws, wr) = unbounded();
                 let wg = WaitGroup::new();
@@ -92,7 +95,7 @@ impl RenderManager {
 
                 d_println(format!("Render manager: job complete"));
 
-                result_sender.send(RenderEvent::RenderingFinished).unwrap();
+                result_sender.send(Some(RenderEvent::RenderingFinished)).unwrap();
 
                 notify_done.send(()).unwrap();
             }
@@ -133,13 +136,13 @@ pub trait Worker {
 }
 
 pub struct LocalWorker {
-    sender: Sender<Option<(Job, Receiver<Option<WorkUnit>>, Sender<RenderEvent>, WaitGroup)>>,
+    sender: Sender<Option<(Job, Receiver<Option<WorkUnit>>, Sender<Option<RenderEvent>>, WaitGroup)>>,
     thread_handle: thread::JoinHandle<()>,
 }
 
 impl LocalWorker {
     pub fn new() -> LocalWorker {
-        let (s, r): (Sender<Option<(Job, Receiver<Option<WorkUnit>>, Sender<RenderEvent>, WaitGroup)>>, Receiver<Option<(Job, Receiver<Option<WorkUnit>>, Sender<RenderEvent>, WaitGroup)>>) = unbounded();
+        let (s, r): (Sender<Option<(Job, Receiver<Option<WorkUnit>>, Sender<Option<RenderEvent>>, WaitGroup)>>, Receiver<Option<(Job, Receiver<Option<WorkUnit>>, Sender<Option<RenderEvent>>, WaitGroup)>>) = unbounded();
 
         let handle = thread::spawn(move || {
             while let Ok(Some((job, recv_unit, send_result, wg))) = r.recv() {
@@ -155,7 +158,7 @@ impl LocalWorker {
                         rows: vec![],
                     };
                     let ev = RenderEvent::RowsReady(r);
-                    send_result.send(ev).unwrap();
+                    send_result.send(Some(ev)).unwrap();
                 }
                 d_println(format!("Local worker finished job"));
                 drop(wg);
@@ -185,17 +188,18 @@ impl Worker for LocalWorker {
 }
 
 pub struct ConsoleResultReporter {
-    sender: Sender<RenderEvent>,
+    sender: Sender<Option<RenderEvent>>,
 }
 
 impl ConsoleResultReporter {
     pub fn new() -> ConsoleResultReporter {
-        let (s, r): (Sender<RenderEvent>, Receiver<RenderEvent>) = unbounded();
+        let (s, r): (Sender<Option<RenderEvent>>, Receiver<Option<RenderEvent>>) = unbounded();
 
         thread::spawn(move || {
-            while let Ok(result) = r.recv() {
+            while let Ok(Some(result)) = r.recv() {
                 match result {
-                    RenderEvent::ImageInfo { width, height } => {
+                    RenderEvent::ImageInfo { scene_name, width, height } => {
+                        println!("ConsoleResultReporter: scene: {}", scene_name);
                         println!("ConsoleResultReporter: image {} x {} pixels",
                                  width, height);
                     },
@@ -215,7 +219,64 @@ impl ConsoleResultReporter {
         }
     }
 
-    pub fn sender(&self) -> Sender<RenderEvent> {
+    pub fn sender(&self) -> Sender<Option<RenderEvent>> {
         self.sender.clone()
+    }
+}
+
+pub struct ImageBuilder {
+    sender: Sender<Option<RenderEvent>>,
+    thread_handle: thread::JoinHandle<()>,
+}
+
+impl ImageBuilder {
+    pub fn new() -> ImageBuilder {
+        let (s, r): (Sender<Option<RenderEvent>>, Receiver<Option<RenderEvent>>) = unbounded();
+
+        let thread_handle = thread::spawn(move || {
+            let (scene_name, width, height) = match r.recv() {
+                Ok(Some(RenderEvent::ImageInfo { scene_name, width, height } )) => (scene_name, width, height),
+                _ => panic!("ImageBuilder: got unexpected message"),
+            };
+
+            println!("ImageBuilder: image {} x {} pixels",
+                     width, height);
+
+            let mut img = Image::new(width, height);
+
+            while let Ok(Some(result)) = r.recv() {
+                match result {
+                    RenderEvent::RowsReady(unit_result) => {
+                        println!("ImageBuilder: image fragment done, {} rows",
+                                 unit_result.work_unit.row_end - unit_result.work_unit.row_start + 1);
+
+                        for (i, row) in unit_result.rows.into_iter().enumerate() {
+                            img.set_row(i + unit_result.work_unit.row_start, row);
+                        }
+                    },
+                    RenderEvent::RenderingFinished => {
+                        println!("ImageBuilder: rendering finished");
+                        let filename = scene_name.clone() + ".ppm";
+                        let mut output_file = File::create(filename).unwrap();
+                        img.write(&mut output_file);
+                    },
+                    _ => panic!("ImageBuilder: got unexpected message"),
+                }
+            }
+        });
+
+        ImageBuilder {
+            sender: s,
+            thread_handle,
+        }
+    }
+
+    pub fn sender(&self) -> Sender<Option<RenderEvent>> {
+        self.sender.clone()
+    }
+
+    pub fn stop(self) {
+        self.sender.send(None).unwrap();
+        self.thread_handle.join().unwrap();
     }
 }
