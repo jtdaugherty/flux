@@ -3,6 +3,7 @@ use crossbeam::channel::{Sender, Receiver, unbounded};
 use crossbeam::sync::WaitGroup;
 use std::fs::File;
 use std::thread;
+use std::sync::{Arc, Mutex};
 
 use scene::{Scene, SceneData};
 use color::Color;
@@ -245,11 +246,14 @@ impl ConsoleResultReporter {
 pub struct ImageBuilder {
     sender: Sender<Option<RenderEvent>>,
     thread_handle: thread::JoinHandle<()>,
+    image: Arc<Mutex<Option<Image>>>,
 }
 
 impl ImageBuilder {
     pub fn new() -> ImageBuilder {
         let (s, r): (Sender<Option<RenderEvent>>, Receiver<Option<RenderEvent>>) = unbounded();
+        let img_ref = Arc::new(Mutex::new(None));
+        let img_ref_thread = img_ref.clone();
 
         let thread_handle = thread::spawn(move || {
             let (scene_name, width, height) = match r.recv() {
@@ -259,7 +263,10 @@ impl ImageBuilder {
 
             d_println(format!("ImageBuilder: image {} x {} pixels", width, height));
 
-            let mut img = Image::new(width, height);
+            {
+                let mut img = img_ref_thread.lock().unwrap();
+                *img = Some(Image::new(width, height));
+            }
 
             while let Ok(Some(result)) = r.recv() {
                 match result {
@@ -267,6 +274,8 @@ impl ImageBuilder {
                         d_println(format!("ImageBuilder: image fragment done, {} rows",
                                           unit_result.work_unit.row_end - unit_result.work_unit.row_start + 1));
 
+                        let mut opt = img_ref_thread.lock().unwrap();
+                        let mut img = opt.as_mut().unwrap();
                         for (i, row) in unit_result.rows.into_iter().enumerate() {
                             img.set_row(i + unit_result.work_unit.row_start, row);
                         }
@@ -275,6 +284,8 @@ impl ImageBuilder {
                         d_println(format!("ImageBuilder: rendering finished"));
                         let filename = scene_name.clone() + ".ppm";
                         let mut output_file = File::create(filename).unwrap();
+                        let mut opt = img_ref_thread.lock().unwrap();
+                        let mut img = opt.as_mut().unwrap();
                         img.write(&mut output_file);
                     },
                     _ => panic!("ImageBuilder: got unexpected message"),
@@ -285,7 +296,12 @@ impl ImageBuilder {
         ImageBuilder {
             sender: s,
             thread_handle,
+            image: img_ref,
         }
+    }
+
+    pub fn get_image(&self) -> Arc<Mutex<Option<Image>>> {
+        self.image.clone()
     }
 
     pub fn sender(&self) -> Sender<Option<RenderEvent>> {
