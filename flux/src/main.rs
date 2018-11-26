@@ -22,7 +22,7 @@ fn main() {
     let c = JobConfiguration {
         rows_per_work_unit: 100,
         max_trace_depth: 2,
-        sample_root: 5,
+        sample_root: 15,
     };
     let s = SceneData {
         scene_name: String::from("test_scene"),
@@ -32,17 +32,36 @@ fn main() {
             pixel_size: 1.0,
         },
         camera_settings: CameraSettings::new(
-                             Point3::new(0.0, 1.5, -3.0),
+                             Point3::new(0.0, 1.5, -9.0),
                              Point3::new(0.0, 0.0, 0.0),
                              Vector3::new(0.0, 1.0, 0.0)),
         camera_data: CameraData {
             zoom_factor: 1.0,
-            view_plane_distance: 100.0,
-            focal_distance: 20.0,
-            lens_radius: 0.0,
+            view_plane_distance: 500.0,
+            focal_distance: 10.0,
+            lens_radius: 0.3,
         },
         background: Color::all(0.7),
         shapes: vec![
+            ShapeData {
+                shape_type: ShapeType::Sphere,
+                content: ShapeContent {
+                    sphere: SphereData {
+                        center: Point3::new(-1.5, 1.0, -2.0),
+                        radius: 1.0,
+                        material: MaterialData {
+                            material_type: MaterialType::Matte,
+                            content: MaterialContent {
+                                matte: MatteData {
+                                    diffuse_coefficient: 1.0,
+                                    ambient_color: Color::white(),
+                                    diffuse_color: Color::new(1.0, 0.0, 1.0),
+                                }
+                            }
+                        },
+                    }
+                },
+            },
             ShapeData {
                 shape_type: ShapeType::Sphere,
                 content: ShapeContent {
@@ -56,6 +75,25 @@ fn main() {
                                     diffuse_coefficient: 1.0,
                                     ambient_color: Color::white(),
                                     diffuse_color: Color::new(1.0, 0.0, 0.0),
+                                }
+                            }
+                        },
+                    }
+                },
+            },
+            ShapeData {
+                shape_type: ShapeType::Sphere,
+                content: ShapeContent {
+                    sphere: SphereData {
+                        center: Point3::new(1.5, 1.0, 2.0),
+                        radius: 1.0,
+                        material: MaterialData {
+                            material_type: MaterialType::Matte,
+                            content: MaterialContent {
+                                matte: MatteData {
+                                    diffuse_coefficient: 1.0,
+                                    ambient_color: Color::white(),
+                                    diffuse_color: Color::new(0.0, 1.0, 0.0),
                                 }
                             }
                         },
