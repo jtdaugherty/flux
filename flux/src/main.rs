@@ -100,7 +100,7 @@ fn main() {
     let mut manager = RenderManager::new(vec![worker.handle()], image_builder.sender());
 
     println!("Sending job to rendering manager");
-    let job = manager.schedule_job(s, c);
+    manager.schedule_job(s, c);
 
     let mut copied_rows: Vec<bool> = (0..image_height).map(|_| false).collect();
     let mut finished = false;
@@ -156,9 +156,6 @@ fn main() {
 
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
-
-    println!("Awaiting job completion");
-    job.wait();
 
     println!("Shutting down");
     manager.stop();
