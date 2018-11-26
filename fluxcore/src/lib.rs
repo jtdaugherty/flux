@@ -6,6 +6,8 @@ extern crate crossbeam;
 extern crate rayon;
 
 pub mod job;
+pub mod brdf;
+pub mod materials;
 pub mod image;
 pub mod color;
 pub mod shapes;

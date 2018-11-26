@@ -75,7 +75,7 @@ impl Camera {
                         origin: self.settings.eye + lpx * self.settings.u + lpy * self.settings.v,
                     };
 
-                    color += s.shade(r);
+                    color += s.shade(r, 1, &self.samples, sample_set_indexes[col], index);
                 }
 
                 color *= pixel_denom;

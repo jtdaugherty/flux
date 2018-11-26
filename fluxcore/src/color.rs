@@ -26,6 +26,10 @@ impl Color {
         Color::all(0.0)
     }
 
+    pub fn white() -> Color {
+        Color::all(1.0)
+    }
+
     pub fn max_to_one(&mut self) -> () {
         let mx1 = if self.r > self.g { self.r } else { self.g };
         let mx2 = if mx1 > self.b { mx1 } else { self.b };

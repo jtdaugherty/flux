@@ -4,6 +4,10 @@ use nalgebra::{Vector3, Point3};
 use color::Color;
 use common::{Ray, Intersectable, Hit};
 use shapes::*;
+use job::JobConfiguration;
+use materials::*;
+use brdf::*;
+use sampling::MasterSampleSets;
 
 #[derive(Clone)]
 pub struct CameraSettings {
@@ -78,9 +82,11 @@ impl Clone for ShapeData {
     }
 }
 
+#[derive(Clone)]
+#[derive(Copy)]
 pub union ShapeContent {
-    pub sphere: Sphere,
-    pub plane: Plane,
+    pub sphere: SphereData,
+    pub plane: PlaneData,
 }
 
 pub struct Scene {
@@ -90,21 +96,43 @@ pub struct Scene {
     pub shapes: Vec<Box<Intersectable>>,
     pub camera_settings: CameraSettings,
     pub camera_data: CameraData,
+    pub job_config: JobConfiguration,
+}
+
+pub fn material_from_data(d: MaterialData) -> Box<Material> {
+    match d.material_type {
+        MaterialType::Matte => {
+            unsafe {
+                Box::new(Matte {
+                    ambient_brdf: Lambertian {
+                        diffuse_coefficient: d.content.matte.diffuse_coefficient,
+                        diffuse_color: d.content.matte.ambient_color,
+                    },
+                    diffuse_brdf: Lambertian {
+                        diffuse_coefficient: d.content.matte.diffuse_coefficient,
+                        diffuse_color: d.content.matte.diffuse_color,
+                    }
+                })
+            }
+        }
+    }
 }
 
 impl Scene {
-    pub fn from_data(sd: SceneData) -> Scene {
+    pub fn from_data(sd: SceneData, config: JobConfiguration) -> Scene {
         let shapes: Vec<Box<Intersectable>> = sd.shapes.iter().map(|sd| {
             match sd.shape_type {
                 ShapeType::Sphere => {
                     unsafe {
-                        let b: Box<Intersectable> = Box::new(sd.content.sphere);
+                        let m = material_from_data(sd.content.sphere.material);
+                        let b: Box<Intersectable> = Box::new(Sphere { data: sd.content.sphere, material: m });
                         b
                     }
                 },
                 ShapeType::Plane => {
                     unsafe {
-                        let b: Box<Intersectable> = Box::new(sd.content.plane);
+                        let m = material_from_data(sd.content.plane.material);
+                        let b: Box<Intersectable> = Box::new(Plane { data: sd.content.plane, material: m });
                         b
                     }
                 },
@@ -118,19 +146,25 @@ impl Scene {
             shapes,
             camera_settings: sd.camera_settings,
             camera_data: sd.camera_data,
+            job_config: config,
         }
     }
 
-    fn hit(&self, r: Ray) -> Option<Hit> {
+    fn hit(&self, r: Ray, depth: usize) -> Option<Hit> {
         self.shapes.iter()
-            .filter_map(|o| o.hit(&r))
+            .filter_map(|o| o.hit(&r, depth))
             .min_by(Hit::compare)
     }
 
-    pub fn shade(&self, r: Ray) -> Color {
-        match self.hit(r) {
-            None => self.background,
-            Some(h) => h.color,
+    pub fn shade(&self, r: Ray, depth: usize, samples: &MasterSampleSets,
+                 set_index: usize, sample_index: usize) -> Color {
+        if depth > self.job_config.max_trace_depth {
+            Color::black()
+        } else {
+            match self.hit(r, depth) {
+                None => self.background,
+                Some(h) => h.material.path_shade(&self, &h, &samples, set_index, sample_index),
+            }
         }
     }
 }

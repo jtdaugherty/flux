@@ -163,7 +163,7 @@ impl LocalWorker {
             while let Ok(Some((job, recv_unit, send_result, wg))) = r.recv() {
                 d_println(format!("Local worker: got job {:?}", job.id));
 
-                let scene = Scene::from_data(job.scene_data);
+                let scene = Scene::from_data(job.scene_data, job.config.clone());
                 let camera = Camera::new(scene.camera_settings.clone(),
                                          job.config,
                                          scene.output_settings.image_width,
