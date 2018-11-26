@@ -55,7 +55,7 @@ fn main() {
                                 matte: MatteData {
                                     diffuse_coefficient: 1.0,
                                     ambient_color: Color::white(),
-                                    diffuse_color: Color::new(1.0, 0.0, 1.0),
+                                    diffuse_color: Color::new(1.0, 0.8, 1.0),
                                 }
                             }
                         },
@@ -74,7 +74,7 @@ fn main() {
                                 matte: MatteData {
                                     diffuse_coefficient: 1.0,
                                     ambient_color: Color::white(),
-                                    diffuse_color: Color::new(1.0, 0.0, 0.0),
+                                    diffuse_color: Color::new(1.0, 0.4, 0.4),
                                 }
                             }
                         },
@@ -93,7 +93,7 @@ fn main() {
                                 matte: MatteData {
                                     diffuse_coefficient: 1.0,
                                     ambient_color: Color::white(),
-                                    diffuse_color: Color::new(0.0, 1.0, 0.0),
+                                    diffuse_color: Color::new(0.5, 1.0, 0.5),
                                 }
                             }
                         },
@@ -112,7 +112,7 @@ fn main() {
                                 matte: MatteData {
                                     diffuse_coefficient: 1.0,
                                     ambient_color: Color::white(),
-                                    diffuse_color: Color::new(0.0, 0.0, 1.0),
+                                    diffuse_color: Color::new(0.8, 0.8, 1.0),
                                 }
                             }
                         },
