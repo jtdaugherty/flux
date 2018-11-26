@@ -20,9 +20,9 @@ use fluxcore::color::Color;
 
 fn main() {
     let c = JobConfiguration {
-        rows_per_work_unit: 10,
+        rows_per_work_unit: 100,
         max_trace_depth: 1,
-        sample_root: 10,
+        sample_root: 1,
     };
     let s = SceneData {
         scene_name: String::from("test_scene"),
@@ -111,11 +111,8 @@ fn main() {
                 let img_ref = image_builder.get_image();
                 let mut opt = img_ref.lock().unwrap();
                 match opt.as_mut() {
-                    None => {
-                        println!("No texture yet.");
-                    },
+                    None => (),
                     Some(img) => {
-                        println!("Updating texture");
                         let mut num_skipped_rows = 0;
                         texture.with_lock(None, |buffer: &mut [u8], pitch: usize| {
                             for y in 0..image_height {
@@ -132,7 +129,6 @@ fn main() {
                                         copied_rows[y] = true;
                                     }
                                 } else {
-                                    println!("Skipping row {}", y);
                                     num_skipped_rows += 1;
                                 }
                             }
