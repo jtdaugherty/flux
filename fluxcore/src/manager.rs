@@ -1,6 +1,7 @@
 
 use crossbeam::channel::{Sender, Receiver, unbounded};
 use crossbeam::sync::WaitGroup;
+use crossbeam::SendError;
 use std::fs::File;
 use std::thread;
 use std::sync::{Arc, Mutex};
@@ -50,8 +51,8 @@ pub struct WorkerHandle {
 }
 
 impl WorkerHandle {
-    pub fn send(&self, j: Job, r: Receiver<Option<WorkUnit>>, s: Sender<Option<RenderEvent>>, wg: WaitGroup) {
-        self.sender.send(Some((j, r, s, wg))).unwrap();
+    pub fn send(&self, j: Job, r: Receiver<Option<WorkUnit>>, s: Sender<Option<RenderEvent>>, wg: WaitGroup) -> Result<(), SendError<WorkerRequest>> {
+        self.sender.send(Some((j, r, s, wg)))
     }
 }
 
@@ -97,7 +98,7 @@ impl RenderManager {
 
                 workers.iter().for_each(|worker| {
                     ws.send(None).unwrap();
-                    worker.send(job.clone(), wr.clone(), result_sender.clone(), wg.clone());
+                    worker.send(job.clone(), wr.clone(), result_sender.clone(), wg.clone()).unwrap();
                 });
 
                 d_println(format!("Render manager: waiting for job completion"));
@@ -108,7 +109,10 @@ impl RenderManager {
 
                 result_sender.send(Some(RenderEvent::RenderingFinished)).unwrap();
 
-                notify_done.send(()).unwrap();
+                match notify_done.send(()) {
+                    Ok(_) => (),
+                    Err(_) => (),
+                }
             }
 
             d_println(format!("Render manager: shutting down"));
