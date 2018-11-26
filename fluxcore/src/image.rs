@@ -8,7 +8,7 @@ use color::Color;
 pub struct Image {
     pub height: usize,
     pub width: usize,
-    pixels: Vec<Vec<Color>>,
+    pub pixels: Vec<Vec<Color>>,
 }
 
 impl Image {
