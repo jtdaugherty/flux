@@ -32,34 +32,9 @@ pub struct PlaneData {
 }
 
 #[derive(Copy)]
-pub struct MaterialData {
-    pub material_type: MaterialType,
-    pub content: MaterialContent,
-}
-
 #[derive(Clone)]
-#[derive(Copy)]
-pub enum MaterialType {
-    Matte,
-}
-
-#[derive(Copy)]
-#[derive(Clone)]
-pub union MaterialContent {
-    pub matte: MatteData,
-}
-
-impl Clone for MaterialData {
-    fn clone(&self) -> MaterialData {
-        let content = match self.material_type {
-            MaterialType::Matte => unsafe { MaterialContent { matte: self.content.matte.clone() } },
-        };
-
-        MaterialData {
-            material_type: self.material_type,
-            content,
-        }
-    }
+pub enum MaterialData {
+    Matte(MatteData),
 }
 
 #[derive(Clone)]

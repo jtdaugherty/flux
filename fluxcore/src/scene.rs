@@ -56,37 +56,11 @@ pub struct OutputSettings {
     pub pixel_size: f64,
 }
 
-#[derive(Clone)]
 #[derive(Copy)]
-pub enum ShapeType {
-    Sphere,
-    Plane,
-}
-
-pub struct ShapeData {
-    pub shape_type: ShapeType,
-    pub content: ShapeContent,
-}
-
-impl Clone for ShapeData {
-    fn clone(&self) -> ShapeData {
-        let content = match self.shape_type {
-            ShapeType::Sphere => unsafe { ShapeContent { sphere: self.content.sphere.clone() } },
-            ShapeType::Plane => unsafe { ShapeContent { plane: self.content.plane.clone() } },
-        };
-
-        ShapeData {
-            shape_type: self.shape_type,
-            content,
-        }
-    }
-}
-
 #[derive(Clone)]
-#[derive(Copy)]
-pub union ShapeContent {
-    pub sphere: SphereData,
-    pub plane: PlaneData,
+pub enum ShapeData {
+    Sphere(SphereData),
+    Plane(PlaneData),
 }
 
 pub struct Scene {
@@ -99,42 +73,36 @@ pub struct Scene {
     pub job_config: JobConfiguration,
 }
 
-pub fn material_from_data(d: MaterialData) -> Box<Material> {
-    match d.material_type {
-        MaterialType::Matte => {
-            unsafe {
-                Box::new(Matte {
-                    ambient_brdf: Lambertian {
-                        diffuse_coefficient: d.content.matte.diffuse_coefficient,
-                        diffuse_color: d.content.matte.ambient_color,
-                    },
-                    diffuse_brdf: Lambertian {
-                        diffuse_coefficient: d.content.matte.diffuse_coefficient,
-                        diffuse_color: d.content.matte.diffuse_color,
-                    }
-                })
-            }
+pub fn material_from_data(d: &MaterialData) -> Box<Material> {
+    match d {
+        MaterialData::Matte(m) => {
+            Box::new(Matte {
+                ambient_brdf: Lambertian {
+                    diffuse_coefficient: m.diffuse_coefficient,
+                    diffuse_color: m.ambient_color,
+                },
+                diffuse_brdf: Lambertian {
+                    diffuse_coefficient: m.diffuse_coefficient,
+                    diffuse_color: m.diffuse_color,
+                }
+            })
         }
     }
 }
 
 impl Scene {
     pub fn from_data(sd: SceneData, config: JobConfiguration) -> Scene {
-        let shapes: Vec<Box<Intersectable>> = sd.shapes.iter().map(|sd| {
-            match sd.shape_type {
-                ShapeType::Sphere => {
-                    unsafe {
-                        let m = material_from_data(sd.content.sphere.material);
-                        let b: Box<Intersectable> = Box::new(Sphere { data: sd.content.sphere, material: m });
-                        b
-                    }
+        let shapes: Vec<Box<Intersectable>> = sd.shapes.into_iter().map(|sd| {
+            match sd {
+                ShapeData::Sphere(s) => {
+                    let m = material_from_data(&s.material);
+                    let b: Box<Intersectable> = Box::new(Sphere { data: s, material: m });
+                    b
                 },
-                ShapeType::Plane => {
-                    unsafe {
-                        let m = material_from_data(sd.content.plane.material);
-                        let b: Box<Intersectable> = Box::new(Plane { data: sd.content.plane, material: m });
-                        b
-                    }
+                ShapeData::Plane(p) => {
+                    let m = material_from_data(&p.material);
+                    let b: Box<Intersectable> = Box::new(Plane { data: p, material: m });
+                    b
                 },
             }
         }).collect();

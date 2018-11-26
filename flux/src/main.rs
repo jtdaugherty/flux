@@ -43,82 +43,42 @@ fn main() {
         },
         background: Color::all(0.7),
         shapes: vec![
-            ShapeData {
-                shape_type: ShapeType::Sphere,
-                content: ShapeContent {
-                    sphere: SphereData {
-                        center: Point3::new(-1.5, 1.0, -2.0),
-                        radius: 1.0,
-                        material: MaterialData {
-                            material_type: MaterialType::Matte,
-                            content: MaterialContent {
-                                matte: MatteData {
-                                    diffuse_coefficient: 1.0,
-                                    ambient_color: Color::white(),
-                                    diffuse_color: Color::new(1.0, 0.8, 1.0),
-                                }
-                            }
-                        },
-                    }
-                },
-            },
-            ShapeData {
-                shape_type: ShapeType::Sphere,
-                content: ShapeContent {
-                    sphere: SphereData {
-                        center: Point3::new(0.0, 1.0, 0.0),
-                        radius: 1.0,
-                        material: MaterialData {
-                            material_type: MaterialType::Matte,
-                            content: MaterialContent {
-                                matte: MatteData {
-                                    diffuse_coefficient: 1.0,
-                                    ambient_color: Color::white(),
-                                    diffuse_color: Color::new(1.0, 0.4, 0.4),
-                                }
-                            }
-                        },
-                    }
-                },
-            },
-            ShapeData {
-                shape_type: ShapeType::Sphere,
-                content: ShapeContent {
-                    sphere: SphereData {
-                        center: Point3::new(1.5, 1.0, 2.0),
-                        radius: 1.0,
-                        material: MaterialData {
-                            material_type: MaterialType::Matte,
-                            content: MaterialContent {
-                                matte: MatteData {
-                                    diffuse_coefficient: 1.0,
-                                    ambient_color: Color::white(),
-                                    diffuse_color: Color::new(0.5, 1.0, 0.5),
-                                }
-                            }
-                        },
-                    }
-                },
-            },
-            ShapeData {
-                shape_type: ShapeType::Plane,
-                content: ShapeContent {
-                    plane: PlaneData {
-                        point: Point3::new(0.0, 0.0, 0.0),
-                        normal: Vector3::new(0.0, 1.0, 0.0),
-                        material: MaterialData {
-                            material_type: MaterialType::Matte,
-                            content: MaterialContent {
-                                matte: MatteData {
-                                    diffuse_coefficient: 1.0,
-                                    ambient_color: Color::white(),
-                                    diffuse_color: Color::new(0.8, 0.8, 1.0),
-                                }
-                            }
-                        },
-                    }
-                },
-            },
+            ShapeData::Sphere(SphereData {
+                center: Point3::new(-1.5, 1.0, -2.0),
+                radius: 1.0,
+                material: MaterialData::Matte(MatteData {
+                    diffuse_coefficient: 1.0,
+                    ambient_color: Color::white(),
+                    diffuse_color: Color::new(1.0, 0.8, 1.0),
+                })
+            }),
+            ShapeData::Sphere(SphereData {
+                center: Point3::new(0.0, 1.0, 0.0),
+                radius: 1.0,
+                material: MaterialData::Matte(MatteData {
+                    diffuse_coefficient: 1.0,
+                    ambient_color: Color::white(),
+                    diffuse_color: Color::new(1.0, 0.4, 0.4),
+                })
+            }),
+            ShapeData::Sphere(SphereData {
+                center: Point3::new(1.5, 1.0, 2.0),
+                radius: 1.0,
+                material: MaterialData::Matte(MatteData {
+                    diffuse_coefficient: 1.0,
+                    ambient_color: Color::white(),
+                    diffuse_color: Color::new(0.5, 1.0, 0.5),
+                })
+            }),
+            ShapeData::Plane(PlaneData {
+                point: Point3::new(0.0, 0.0, 0.0),
+                normal: Vector3::new(0.0, 1.0, 0.0),
+                material: MaterialData::Matte(MatteData {
+                    diffuse_coefficient: 1.0,
+                    ambient_color: Color::white(),
+                    diffuse_color: Color::new(0.8, 0.8, 1.0),
+                })
+            }),
         ],
     };
 
