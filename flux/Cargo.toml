@@ -7,3 +7,8 @@ authors = ["Jonathan Daugherty <cygnus@foobox.com>"]
 samplers = { path = "../samplers" }
 fluxcore = { path = "../fluxcore" }
 nalgebra = "0.16.5"
+
+[dependencies.sdl2]
+version = "0.31.0"
+default-features = false
+features = ["image"]
