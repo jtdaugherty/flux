@@ -22,7 +22,7 @@ fn main() {
     let c = JobConfiguration {
         rows_per_work_unit: 100,
         max_trace_depth: 10,
-        sample_root: 15,
+        sample_root: 1,
     };
     let s = SceneData {
         scene_name: String::from("test_scene"),
