@@ -22,18 +22,18 @@ fn main() {
     let c = JobConfiguration {
         rows_per_work_unit: 100,
         max_trace_depth: 10,
-        sample_root: 1,
+        sample_root: 20,
     };
     let s = SceneData {
         scene_name: String::from("test_scene"),
         output_settings: OutputSettings {
-            image_width: 1000,
-            image_height: 1000,
-            pixel_size: 0.5,
+            image_width: 400,
+            image_height: 300,
+            pixel_size: 1.0,
         },
         camera_settings: CameraSettings::new(
                              Point3::new(0.0, 1.5, -9.0),
-                             Point3::new(0.0, 0.0, 0.0),
+                             Point3::new(0.0, 1.0, 0.0),
                              Vector3::new(0.0, 1.0, 0.0)),
         camera_data: CameraData {
             zoom_factor: 1.0,
