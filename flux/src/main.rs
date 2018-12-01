@@ -41,8 +41,17 @@ fn main() {
             focal_distance: 10.0,
             lens_radius: 0.3,
         },
-        background: Color::all(0.7),
+        background: Color::all(0.1),
         shapes: vec![
+            // Light
+            ShapeData::Sphere(SphereData {
+                center: Point3::new(-2.0, 10.0, 0.0),
+                radius: 3.0,
+                material: MaterialData::Emissive(EmissiveData {
+                    color: Color::all(1.0),
+                    power: 15.0,
+                })
+            }),
             ShapeData::Sphere(SphereData {
                 center: Point3::new(-3.0, 1.0, -4.0),
                 radius: 1.0,

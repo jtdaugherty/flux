@@ -75,6 +75,12 @@ pub struct Scene {
 
 pub fn material_from_data(d: &MaterialData) -> Box<Material> {
     match d {
+        MaterialData::Emissive(e) => {
+            Box::new(Emissive {
+                color: e.color,
+                power: e.power,
+            })
+        },
         MaterialData::Matte(m) => {
             Box::new(Matte {
                 ambient_brdf: Lambertian {
@@ -86,7 +92,7 @@ pub fn material_from_data(d: &MaterialData) -> Box<Material> {
                     diffuse_color: m.diffuse_color,
                 }
             })
-        }
+        },
     }
 }
 

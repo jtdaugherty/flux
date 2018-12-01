@@ -31,3 +31,23 @@ impl Material for Matte {
             (ndotwi / pdf)
     }
 }
+
+pub struct Emissive {
+    pub color: Color,
+    pub power: f64,
+}
+
+impl Material for Emissive {
+    fn path_shade(&self, scene: &Scene, hit: &Hit, samples: &MasterSampleSets,
+                  set_index: usize, sample_index: usize) -> Color {
+        if hit.depth == 1 {
+            Color::black()
+        } else {
+            if (hit.normal * -1.0).dot(&hit.ray.direction) > 0.0 {
+                self.color * self.power
+            } else {
+                Color::black()
+            }
+        }
+    }
+}

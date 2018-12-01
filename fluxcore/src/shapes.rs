@@ -35,6 +35,7 @@ pub struct PlaneData {
 #[derive(Clone)]
 pub enum MaterialData {
     Matte(MatteData),
+    Emissive(EmissiveData),
 }
 
 #[derive(Clone)]
@@ -43,6 +44,13 @@ pub struct MatteData {
     pub diffuse_color: Color,
     pub ambient_color: Color,
     pub diffuse_coefficient: f64,
+}
+
+#[derive(Clone)]
+#[derive(Copy)]
+pub struct EmissiveData {
+    pub color: Color,
+    pub power: f64,
 }
 
 impl Intersectable for Plane {
