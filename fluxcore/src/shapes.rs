@@ -17,6 +17,7 @@ pub struct SphereData {
     pub center: Point3<f64>,
     pub radius: f64,
     pub material: MaterialData,
+    pub invert: bool,
 }
 
 pub struct Plane {
@@ -152,6 +153,7 @@ impl Intersectable for Sphere {
             let b = 2.0 * temp.dot(&r.direction);
             let c = temp.dot(&temp) - self.data.radius * self.data.radius;
             let disc = b * b - 4.0 * a * c;
+            let invert_val = if self.data.invert { -1.0 } else { 1.0 };
 
             if disc < 0.0 {
                 None
@@ -165,7 +167,7 @@ impl Intersectable for Sphere {
                         ray: r.clone(),
                         distance: t,
                         depth,
-                        normal: (temp + t * r.direction) / self.data.radius,
+                        normal: (temp + t * r.direction) * invert_val / self.data.radius,
                         local_hit_point: r.origin + t * r.direction,
                         material: self.material.as_ref(),
                     })
@@ -176,7 +178,7 @@ impl Intersectable for Sphere {
                             ray: r.clone(),
                             distance: t2,
                             depth,
-                            normal: (temp + t2 * r.direction) / self.data.radius,
+                            normal: (temp + t2 * r.direction) * invert_val / self.data.radius,
                             local_hit_point: r.origin + t2 * r.direction,
                             material: self.material.as_ref(),
                         })
