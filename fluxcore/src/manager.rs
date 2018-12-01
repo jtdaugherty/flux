@@ -5,16 +5,15 @@ use crossbeam::SendError;
 use std::fs::File;
 use std::thread;
 use std::sync::{Arc, Mutex};
+use std::time::{SystemTime, UNIX_EPOCH, Duration};
 
 use scene::{Scene, SceneData};
 use color::Color;
 use image::Image;
-use job::{JobConfiguration, Job, JobIDAllocator, WorkUnit};
+use job::{JobConfiguration, Job, JobID, JobIDAllocator, WorkUnit};
 use trace::Camera;
 
 const DEBUG: bool = false;
-
-use std::time::{SystemTime, UNIX_EPOCH, Duration};
 
 fn d_println(s: String) {
     if DEBUG {
@@ -28,9 +27,10 @@ fn to_ms(d: Duration) -> u64 {
 }
 
 pub enum RenderEvent {
+    RenderingStarted { job_id: JobID, start_time: SystemTime, },
     ImageInfo { scene_name: String, width: usize, height: usize },
     RowsReady(WorkUnitResult),
-    RenderingFinished,
+    RenderingFinished { end_time: SystemTime },
 }
 
 pub struct WorkUnitResult {
@@ -96,6 +96,10 @@ impl RenderManager {
 
                 d_println(format!("Render manager: work queue ready, sending job to workers"));
 
+                let start_time = SystemTime::now();
+                let startEvent = RenderEvent::RenderingStarted { job_id: job.id, start_time, };
+                result_sender.send(Some(startEvent)).unwrap();
+
                 workers.iter().for_each(|worker| {
                     ws.send(None).unwrap();
                     worker.send(job.clone(), wr.clone(), result_sender.clone(), wg.clone()).unwrap();
@@ -107,7 +111,8 @@ impl RenderManager {
 
                 d_println(format!("Render manager: job complete"));
 
-                result_sender.send(Some(RenderEvent::RenderingFinished)).unwrap();
+                let end_time = SystemTime::now();
+                result_sender.send(Some(RenderEvent::RenderingFinished { end_time, })).unwrap();
 
                 match notify_done.send(()) {
                     Ok(_) => (),
@@ -221,6 +226,9 @@ impl ConsoleResultReporter {
         thread::spawn(move || {
             while let Ok(Some(result)) = r.recv() {
                 match result {
+                    RenderEvent::RenderingStarted { job_id, start_time, } => {
+                        println!("ConsoleResultReporter: job {:?} started at {:?}", job_id, start_time);
+                    },
                     RenderEvent::ImageInfo { scene_name, width, height } => {
                         println!("ConsoleResultReporter: scene: {}", scene_name);
                         println!("ConsoleResultReporter: image {} x {} pixels",
@@ -230,8 +238,8 @@ impl ConsoleResultReporter {
                         println!("ConsoleResultReporter: image fragment done, {} rows",
                                  unit_result.work_unit.row_end - unit_result.work_unit.row_start + 1);
                     },
-                    RenderEvent::RenderingFinished => {
-                        println!("ConsoleResultReporter: rendering finished");
+                    RenderEvent::RenderingFinished { end_time, } => {
+                        println!("ConsoleResultReporter: rendering finished at {:?}", end_time);
                     }
                 }
             }
@@ -267,6 +275,11 @@ impl ImageBuilder {
 
             d_println(format!("ImageBuilder: image {} x {} pixels", width, height));
 
+            let start_time = match r.recv() {
+                Ok(Some(RenderEvent::RenderingStarted { job_id, start_time, })) => start_time,
+                _ => panic!("ImageBuilder: got unexpected message when expecting render start message"),
+            };
+
             {
                 let mut img = img_ref_thread.lock().unwrap();
                 *img = Some(Image::new(width, height));
@@ -284,8 +297,10 @@ impl ImageBuilder {
                             img.set_row(i + unit_result.work_unit.row_start, row);
                         }
                     },
-                    RenderEvent::RenderingFinished => {
-                        d_println(format!("ImageBuilder: rendering finished"));
+                    RenderEvent::RenderingFinished { end_time, } => {
+                        println!("rendering finished, total time {:?}", end_time.duration_since(start_time));
+                        d_println(format!("ImageBuilder: rendering finished, total time {:?}",
+                                          end_time.duration_since(start_time)));
                         let filename = scene_name.clone() + ".ppm";
                         let mut output_file = File::create(filename).unwrap();
                         let mut opt = img_ref_thread.lock().unwrap();
