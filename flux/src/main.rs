@@ -21,8 +21,8 @@ use fluxcore::color::Color;
 fn main() {
     let c = JobConfiguration {
         rows_per_work_unit: 100,
-        max_trace_depth: 2,
-        sample_root: 15,
+        max_trace_depth: 10,
+        sample_root: 20,
     };
     let s = SceneData {
         scene_name: String::from("test_scene"),
