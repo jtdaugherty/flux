@@ -8,6 +8,7 @@ use color::Color;
 pub struct Sphere {
     pub data: SphereData,
     pub material: Box<Material>,
+    pub bbox: BoundingBox,
 }
 
 #[derive(Clone)]
@@ -53,6 +54,58 @@ pub struct EmissiveData {
     pub power: f64,
 }
 
+#[derive(Clone)]
+#[derive(Copy)]
+pub struct BoundingBox {
+    pub corner0: Point3<f64>,
+    pub corner1: Point3<f64>,
+}
+
+fn min(a: f64, b: f64) -> f64 {
+    if a < b { a } else { b }
+}
+
+fn max(a: f64, b: f64) -> f64 {
+    if a > b { a } else { b }
+}
+
+impl BoundingBox {
+    fn hit<'a>(&'a self, r: &Ray) -> bool {
+        let ox = r.origin.x;
+        let oy = r.origin.y;
+        let oz = r.origin.z;
+        let dx = r.direction.x;
+        let dy = r.direction.y;
+        let dz = r.direction.z;
+
+        let a = 1.0 / dx;
+        let (tx_min, tx_max) = if a >= 0.0 {
+            ((self.corner0.x - ox) * a, (self.corner1.x - ox) * a)
+        } else {
+            ((self.corner1.x - ox) * a, (self.corner0.x - ox) * a)
+        };
+
+        let b = 1.0 / dy;
+        let (ty_min, ty_max) = if b >= 0.0 {
+            ((self.corner0.y - oy) * b, (self.corner1.y - oy) * b)
+        } else {
+            ((self.corner1.y - oy) * b, (self.corner0.y - oy) * b)
+        };
+
+        let c = 1.0 / dz;
+        let (tz_min, tz_max) = if c >= 0.0 {
+            ((self.corner0.z - oz) * c, (self.corner1.z - oz) * c)
+        } else {
+            ((self.corner1.z - oz) * c, (self.corner0.z - oz) * c)
+        };
+
+        let t0 = max(tx_min, max(ty_min, tz_min));
+        let t1 = min(tx_max, min(ty_max, tz_max));
+
+        (t0 < t1 && t1 > T_MIN)
+    }
+}
+
 impl Intersectable for Plane {
     fn hit<'a>(&'a self, r: &Ray, depth: usize) -> Option<Hit<'a>> {
         let t = (self.data.point - r.origin).dot(&self.data.normal) / (r.direction.dot(&self.data.normal));
@@ -72,43 +125,64 @@ impl Intersectable for Plane {
     }
 }
 
+impl Sphere {
+    pub fn new(data: SphereData, material: Box<Material>) -> Sphere {
+        let delta = Vector3::new(data.radius, data.radius, data.radius);
+        let corner0 = data.center - delta;
+        let corner1 = data.center + delta;
+        let bbox = BoundingBox {
+            corner0, corner1,
+        };
+
+        Sphere {
+            data,
+            material,
+            bbox,
+        }
+    }
+}
+
 impl Intersectable for Sphere {
     fn hit<'a>(&'a self, r: &Ray, depth: usize) -> Option<Hit<'a>> {
-        let temp = r.origin - self.data.center;
-        let a = r.direction.dot(&r.direction);
-        let b = 2.0 * temp.dot(&r.direction);
-        let c = temp.dot(&temp) - self.data.radius * self.data.radius;
-        let disc = b * b - 4.0 * a * c;
-
-        if disc < 0.0 {
+        if !self.bbox.hit(&r) {
             None
         } else {
-            let e = disc.sqrt();
-            let denom = 2.0 * a;
-            let t = (-b - e) / denom;
+            let temp = r.origin - self.data.center;
+            let a = r.direction.dot(&r.direction);
+            let b = 2.0 * temp.dot(&r.direction);
+            let c = temp.dot(&temp) - self.data.radius * self.data.radius;
+            let disc = b * b - 4.0 * a * c;
 
-            if t > T_MIN {
-                Some(Hit {
-                    ray: r.clone(),
-                    distance: t,
-                    depth,
-                    normal: (temp + t * r.direction) / self.data.radius,
-                    local_hit_point: r.origin + t * r.direction,
-                    material: self.material.as_ref(),
-                })
+            if disc < 0.0 {
+                None
             } else {
-                let t2 = (-b + e) / denom;
-                if t2 > T_MIN {
+                let e = disc.sqrt();
+                let denom = 2.0 * a;
+                let t = (-b - e) / denom;
+
+                if t > T_MIN {
                     Some(Hit {
                         ray: r.clone(),
-                        distance: t2,
+                        distance: t,
                         depth,
-                        normal: (temp + t2 * r.direction) / self.data.radius,
-                        local_hit_point: r.origin + t2 * r.direction,
+                        normal: (temp + t * r.direction) / self.data.radius,
+                        local_hit_point: r.origin + t * r.direction,
                         material: self.material.as_ref(),
                     })
                 } else {
-                    None
+                    let t2 = (-b + e) / denom;
+                    if t2 > T_MIN {
+                        Some(Hit {
+                            ray: r.clone(),
+                            distance: t2,
+                            depth,
+                            normal: (temp + t2 * r.direction) / self.data.radius,
+                            local_hit_point: r.origin + t2 * r.direction,
+                            material: self.material.as_ref(),
+                        })
+                    } else {
+                        None
+                    }
                 }
             }
         }

@@ -102,7 +102,7 @@ impl Scene {
             match sd {
                 ShapeData::Sphere(s) => {
                     let m = material_from_data(&s.material);
-                    let b: Box<Intersectable> = Box::new(Sphere { data: s, material: m });
+                    let b: Box<Intersectable> = Box::new(Sphere::new(s, m));
                     b
                 },
                 ShapeData::Plane(p) => {
