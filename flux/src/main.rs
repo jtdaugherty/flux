@@ -22,14 +22,14 @@ fn main() {
     let c = JobConfiguration {
         rows_per_work_unit: 100,
         max_trace_depth: 10,
-        sample_root: 20,
+        sample_root: 15,
     };
     let s = SceneData {
         scene_name: String::from("test_scene"),
         output_settings: OutputSettings {
-            image_width: 400,
-            image_height: 400,
-            pixel_size: 1.0,
+            image_width: 1000,
+            image_height: 1000,
+            pixel_size: 0.5,
         },
         camera_settings: CameraSettings::new(
                              Point3::new(0.0, 1.5, -9.0),
@@ -43,6 +43,15 @@ fn main() {
         },
         background: Color::all(0.7),
         shapes: vec![
+            ShapeData::Sphere(SphereData {
+                center: Point3::new(-3.0, 1.0, -4.0),
+                radius: 1.0,
+                material: MaterialData::Matte(MatteData {
+                    diffuse_coefficient: 1.0,
+                    ambient_color: Color::white(),
+                    diffuse_color: Color::new(0.0, 0.7, 0.6),
+                })
+            }),
             ShapeData::Sphere(SphereData {
                 center: Point3::new(-1.5, 1.0, -2.0),
                 radius: 1.0,
@@ -70,13 +79,31 @@ fn main() {
                     diffuse_color: Color::new(0.5, 1.0, 0.5),
                 })
             }),
+            ShapeData::Sphere(SphereData {
+                center: Point3::new(3.0, 1.0, 4.0),
+                radius: 1.0,
+                material: MaterialData::Matte(MatteData {
+                    diffuse_coefficient: 1.0,
+                    ambient_color: Color::white(),
+                    diffuse_color: Color::new(0.0, 0.1, 0.9),
+                })
+            }),
+            ShapeData::Sphere(SphereData {
+                center: Point3::new(4.5, 1.0, 6.0),
+                radius: 1.0,
+                material: MaterialData::Matte(MatteData {
+                    diffuse_coefficient: 1.0,
+                    ambient_color: Color::white(),
+                    diffuse_color: Color::new(0.5, 0.3, 0.8),
+                })
+            }),
             ShapeData::Plane(PlaneData {
                 point: Point3::new(0.0, 0.0, 0.0),
                 normal: Vector3::new(0.0, 1.0, 0.0),
                 material: MaterialData::Matte(MatteData {
                     diffuse_coefficient: 1.0,
                     ambient_color: Color::white(),
-                    diffuse_color: Color::new(0.8, 0.8, 1.0),
+                    diffuse_color: Color::new(0.6, 0.6, 0.8),
                 })
             }),
         ],
