@@ -2,8 +2,6 @@
 Next steps
 ==========
 
-* Emissive material
-
 * Quad (for area light)
 
 * CMJ sampling
