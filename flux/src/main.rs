@@ -21,8 +21,8 @@ use fluxcore::color::Color;
 fn main() {
     let c = JobConfiguration {
         rows_per_work_unit: 100,
-        max_trace_depth: 20,
-        sample_root: 5,
+        max_trace_depth: 10,
+        sample_root: 10,
     };
     let s = SceneData {
         scene_name: String::from("test_scene"),
@@ -49,21 +49,20 @@ fn main() {
                 radius: 100.0,
                 invert: true,
                 material: MaterialData::Emissive(EmissiveData {
-                    // color: Color::all(1.0),
                     color: Color::new(1.0, 0.9686, 0.8588),
-                    power: 0.7,
+                    power: 0.8,
                 })
             }),
             // Small light 1
-            ShapeData::Sphere(SphereData {
-                center: Point3::new(-12.0, 3.0, 0.0),
-                radius: 3.0,
-                invert: false,
-                material: MaterialData::Emissive(EmissiveData {
-                    color: Color::all(1.0),
-                    power: 8.0,
-                })
-            }),
+            // ShapeData::Sphere(SphereData {
+            //     center: Point3::new(-12.0, 3.0, 0.0),
+            //     radius: 3.0,
+            //     invert: false,
+            //     material: MaterialData::Emissive(EmissiveData {
+            //         color: Color::all(1.0),
+            //         power: 8.0,
+            //     })
+            // }),
             ShapeData::Sphere(SphereData {
                 center: Point3::new(-3.0, 1.0, -4.0),
                 radius: 1.0,
