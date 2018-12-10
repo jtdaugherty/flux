@@ -50,19 +50,19 @@ fn main() {
                 invert: true,
                 material: MaterialData::Emissive(EmissiveData {
                     color: Color::new(1.0, 0.9686, 0.8588),
-                    power: 0.8,
+                    power: 0.5,
                 })
             }),
-            // Small light 1
-            // ShapeData::Sphere(SphereData {
-            //     center: Point3::new(-12.0, 3.0, 0.0),
-            //     radius: 3.0,
-            //     invert: false,
-            //     material: MaterialData::Emissive(EmissiveData {
-            //         color: Color::all(1.0),
-            //         power: 8.0,
-            //     })
-            // }),
+            // Small light
+            ShapeData::Sphere(SphereData {
+                center: Point3::new(0.0, 8.0, 0.0),
+                radius: 3.0,
+                invert: false,
+                material: MaterialData::Emissive(EmissiveData {
+                    color: Color::all(1.0),
+                    power: 5.0,
+                })
+            }),
             ShapeData::Sphere(SphereData {
                 center: Point3::new(-3.0, 1.0, -4.0),
                 radius: 1.0,
@@ -74,33 +74,12 @@ fn main() {
                 })
             }),
             ShapeData::Sphere(SphereData {
-                center: Point3::new(-1.5, 1.0, -2.0),
-                radius: 1.0,
-                invert: false,
-                material: MaterialData::Matte(MatteData {
-                    diffuse_coefficient: 1.0,
-                    ambient_color: Color::white(),
-                    diffuse_color: Color::all(1.0),
-                })
-            }),
-            ShapeData::Sphere(SphereData {
-                center: Point3::new(0.0, 1.0, 0.0),
-                radius: 1.0,
-                invert: false,
-                material: MaterialData::Matte(MatteData {
-                    diffuse_coefficient: 1.0,
-                    ambient_color: Color::white(),
-                    diffuse_color: Color::new(1.0, 0.4, 0.4),
-                })
-            }),
-            ShapeData::Sphere(SphereData {
                 center: Point3::new(1.5, 1.0, 2.0),
                 radius: 1.0,
                 invert: false,
-                material: MaterialData::Matte(MatteData {
-                    diffuse_coefficient: 1.0,
-                    ambient_color: Color::white(),
-                    diffuse_color: Color::new(0.5, 1.0, 0.5),
+                material: MaterialData::Reflective(ReflectiveData {
+                    reflect_amount: 0.9,
+                    reflect_color: Color::new(0.9, 1.0, 0.9),
                 })
             }),
             ShapeData::Sphere(SphereData {

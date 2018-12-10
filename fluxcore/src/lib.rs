@@ -1,4 +1,5 @@
 
+extern crate num;
 extern crate nalgebra;
 extern crate samplers;
 extern crate rand;

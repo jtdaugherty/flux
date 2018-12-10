@@ -81,6 +81,14 @@ pub fn material_from_data(d: &MaterialData) -> Box<Material> {
                 power: e.power,
             })
         },
+        MaterialData::Reflective(p) => {
+            Box::new(Reflective {
+                reflective_brdf: PerfectSpecular {
+                    kr: p.reflect_amount,
+                    cr: p.reflect_color,
+                },
+            })
+        },
         MaterialData::Matte(m) => {
             Box::new(Matte {
                 ambient_brdf: Lambertian {

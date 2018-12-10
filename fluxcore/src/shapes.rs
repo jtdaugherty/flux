@@ -38,6 +38,7 @@ pub struct PlaneData {
 pub enum MaterialData {
     Matte(MatteData),
     Emissive(EmissiveData),
+    Reflective(ReflectiveData),
 }
 
 #[derive(Clone)]
@@ -53,6 +54,13 @@ pub struct MatteData {
 pub struct EmissiveData {
     pub color: Color,
     pub power: f64,
+}
+
+#[derive(Clone)]
+#[derive(Copy)]
+pub struct ReflectiveData {
+    pub reflect_amount: f64,
+    pub reflect_color: Color,
 }
 
 #[derive(Clone)]

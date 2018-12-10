@@ -47,3 +47,24 @@ impl Material for Emissive {
         }
     }
 }
+
+pub struct Reflective {
+    pub reflective_brdf: PerfectSpecular,
+}
+
+impl Material for Reflective {
+    fn path_shade(&self, scene: &Scene, hit: &Hit, samples: &MasterSampleSets,
+                  set_index: usize, sample_index: usize) -> Color {
+        let wo = hit.ray.direction * -1.0;
+        let hemi_sample = &samples.hemi_sets[set_index][hit.depth - 1][sample_index];
+        let (wi, pdf, fr) = self.reflective_brdf.sample_f(hit, &wo, &hemi_sample);
+
+        let reflected_ray = Ray {
+            origin: hit.local_hit_point,
+            direction: wi,
+        };
+
+        fr * scene.shade(reflected_ray, hit.depth + 1, &samples, set_index, sample_index) *
+            (hit.normal.dot(&wi) / pdf)
+    }
+}
