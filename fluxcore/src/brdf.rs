@@ -51,11 +51,11 @@ pub struct GlossySpecular {
 impl BRDF for GlossySpecular {
     fn sample_f(&self, hit: &Hit, wo: &Vector3<f64>, hemi_sample: &Vector3<f64>) -> (Vector3<f64>, f64, Color) {
         let ndotwo = hit.normal.dot(&wo);
-        let r = -wo + hit.normal * ndotwo * 2.0;
+        let r = -wo + (hit.normal * ndotwo * 2.0);
 
         let w = r;
-        let v = Vector3::new(0.00424, 1.0, 0.00764).cross(&w).normalize();
-        let u = v.cross(&w);
+        let u = Vector3::new(0.00424, 1.0, 0.00764).cross(&w).normalize();
+        let v = u.cross(&w);
 
         let wi0 = u * hemi_sample.x + v * hemi_sample.y + w * hemi_sample.z;
 
@@ -69,6 +69,6 @@ impl BRDF for GlossySpecular {
         let pdf = phong_lobe * hit.normal.dot(&wi);
         let color = self.cs * self.ks * phong_lobe;
 
-        (wi, pdf, Color::white() + color)
+        (wi, pdf, color)
     }
 }
