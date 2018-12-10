@@ -24,6 +24,14 @@ impl Image {
         self.pixels[row_index] = values;
     }
 
+    pub fn set_pixel(&mut self, row_index: usize, col_index: usize, value: Color) {
+        if col_index >= self.pixels[row_index].len() {
+            self.pixels[row_index].resize(col_index + 1, Color::black());
+        }
+
+        self.pixels[row_index][col_index] = value;
+    }
+
     pub fn write(&self, f: &mut File) {
         let mut buf = BufWriter::new(f);
 
