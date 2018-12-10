@@ -1,0 +1,10 @@
+[package]
+name = "sampler-debug"
+version = "0.1.0"
+authors = ["Jonathan Daugherty <cygnus@foobox.com>"]
+edition = "2018"
+
+[dependencies]
+samplers = { path = "../samplers" }
+fluxcore = { path = "../fluxcore" }
+nalgebra = "0.16.5"

@@ -4,6 +4,7 @@ members = [
   "flux",
   "flux-node",
   "fluxcore",
+  "sampler-debug",
   ]
 
 [profile.dev]
