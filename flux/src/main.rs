@@ -50,17 +50,7 @@ fn main() {
                 invert: true,
                 material: MaterialData::Emissive(EmissiveData {
                     color: Color::new(1.0, 0.9686, 0.8588),
-                    power: 0.5,
-                })
-            }),
-            // Small light
-            ShapeData::Sphere(SphereData {
-                center: Point3::new(0.0, 8.0, 0.0),
-                radius: 3.0,
-                invert: false,
-                material: MaterialData::Emissive(EmissiveData {
-                    color: Color::all(1.0),
-                    power: 5.0,
+                    power: 1.0,
                 })
             }),
             ShapeData::Sphere(SphereData {
