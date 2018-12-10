@@ -39,6 +39,7 @@ pub enum MaterialData {
     Matte(MatteData),
     Emissive(EmissiveData),
     Reflective(ReflectiveData),
+    GlossyReflective(GlossyReflectiveData),
 }
 
 #[derive(Clone)]
@@ -61,6 +62,14 @@ pub struct EmissiveData {
 pub struct ReflectiveData {
     pub reflect_amount: f64,
     pub reflect_color: Color,
+}
+
+#[derive(Clone)]
+#[derive(Copy)]
+pub struct GlossyReflectiveData {
+    pub reflect_amount: f64,
+    pub reflect_color: Color,
+    pub reflect_exponent: f64,
 }
 
 #[derive(Clone)]

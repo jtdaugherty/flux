@@ -89,6 +89,15 @@ pub fn material_from_data(d: &MaterialData) -> Box<Material> {
                 }),
             })
         },
+        MaterialData::GlossyReflective(p) => {
+            Box::new(Reflective {
+                reflective_brdf: Box::new(GlossySpecular {
+                    ks: p.reflect_amount,
+                    cs: p.reflect_color,
+                    exp: p.reflect_exponent,
+                }),
+            })
+        },
         MaterialData::Matte(m) => {
             Box::new(Matte {
                 ambient_brdf: Lambertian {
