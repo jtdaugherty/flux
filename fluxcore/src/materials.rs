@@ -49,7 +49,7 @@ impl Material for Emissive {
 }
 
 pub struct Reflective {
-    pub reflective_brdf: PerfectSpecular,
+    pub reflective_brdf: Box<BRDF>,
 }
 
 impl Material for Reflective {

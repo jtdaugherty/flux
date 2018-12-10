@@ -6,7 +6,7 @@ use common::Hit;
 use color::Color;
 use constants::INV_PI;
 
-pub trait BRDF {
+pub trait BRDF: Send + Sync {
     fn sample_f(&self, hit: &Hit, wo: &Vector3<f64>, hemi_sample: &Vector3<f64>) -> (Vector3<f64>, f64, Color);
 }
 
