@@ -27,19 +27,19 @@ impl Image {
     pub fn write(&self, f: &mut File) {
         let mut buf = BufWriter::new(f);
 
-        write!(buf, "P3\n{} {}\n65535\n", self.width, self.height);
+        write!(buf, "P3\n{} {}\n65535\n", self.width, self.height).unwrap();
         for row in &self.pixels {
             for pixel in row {
                 write!(buf, "{} {} {}\n",
                        (pixel.r * 65535.99) as u16,
                        (pixel.g * 65535.99) as u16,
-                       (pixel.b * 65535.99) as u16);
+                       (pixel.b * 65535.99) as u16).unwrap();
             }
 
             // Since this row could have been incomplete/missing, emit
             // enough blank pixels to compensate.
             for _ in 0..(self.width - row.len()) {
-                write!(buf, "{} {} {}\n", 0, 0, 0);
+                write!(buf, "{} {} {}\n", 0, 0, 0).unwrap();
             }
         }
     }

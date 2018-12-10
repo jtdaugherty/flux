@@ -38,8 +38,8 @@ pub struct Emissive {
 }
 
 impl Material for Emissive {
-    fn path_shade(&self, scene: &Scene, hit: &Hit, samples: &MasterSampleSets,
-                  set_index: usize, sample_index: usize) -> Color {
+    fn path_shade(&self, _scene: &Scene, hit: &Hit, _samples: &MasterSampleSets,
+                  _set_index: usize, _sample_index: usize) -> Color {
         if (hit.normal * -1.0).dot(&hit.ray.direction) > 0.0 {
             self.color * self.power
         } else {

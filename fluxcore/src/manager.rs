@@ -97,8 +97,8 @@ impl RenderManager {
                 d_println(format!("Render manager: work queue ready, sending job to workers"));
 
                 let start_time = SystemTime::now();
-                let startEvent = RenderEvent::RenderingStarted { job_id: job.id, start_time, };
-                result_sender.send(Some(startEvent)).unwrap();
+                let start_event = RenderEvent::RenderingStarted { job_id: job.id, start_time, };
+                result_sender.send(Some(start_event)).unwrap();
 
                 workers.iter().for_each(|worker| {
                     ws.send(None).unwrap();
@@ -276,7 +276,7 @@ impl ImageBuilder {
             d_println(format!("ImageBuilder: image {} x {} pixels", width, height));
 
             let start_time = match r.recv() {
-                Ok(Some(RenderEvent::RenderingStarted { job_id, start_time, })) => start_time,
+                Ok(Some(RenderEvent::RenderingStarted { job_id: _, start_time, })) => start_time,
                 _ => panic!("ImageBuilder: got unexpected message when expecting render start message"),
             };
 

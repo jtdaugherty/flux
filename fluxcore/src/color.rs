@@ -4,7 +4,6 @@ use std::ops::DivAssign;
 use std::ops::MulAssign;
 use std::ops::Mul;
 use std::ops::Add;
-use std::cmp::Eq;
 
 #[derive(Clone)]
 #[derive(Copy)]

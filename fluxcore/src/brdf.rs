@@ -34,7 +34,7 @@ pub struct PerfectSpecular {
 }
 
 impl BRDF for PerfectSpecular {
-    fn sample_f(&self, hit: &Hit, wo: &Vector3<f64>, hemi_sample: &Vector3<f64>) -> (Vector3<f64>, f64, Color) {
+    fn sample_f(&self, hit: &Hit, wo: &Vector3<f64>, _hemi_sample: &Vector3<f64>) -> (Vector3<f64>, f64, Color) {
         let ndotwo = hit.normal.dot(&wo);
         let wi = -wo + hit.normal * ndotwo * 2.0;
         let pdf = hit.normal.dot(&wi);
