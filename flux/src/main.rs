@@ -131,12 +131,17 @@ fn main() {
 
     //////////////////////////////////////////////////////////////////////////
 
-    println!("Starting local worker");
-    let worker = LocalWorker::new();
+    let local_worker = LocalWorker::new();
+
+    println!("Connecting to network worker");
+    let host = String::from("localhost");
+    let port = String::from("2000");
+    let network_worker = NetworkWorker::new(host, port);
+
     let image_builder = ImageBuilder::new();
 
     println!("Starting rendering manager");
-    let mut manager = RenderManager::new(vec![worker.handle()], image_builder.sender());
+    let mut manager = RenderManager::new(vec![local_worker.handle(), network_worker.handle()], image_builder.sender());
 
     println!("Sending job to rendering manager");
     manager.schedule_job(s, c);
@@ -198,6 +203,7 @@ fn main() {
 
     println!("Shutting down");
     manager.stop();
-    worker.stop();
+    local_worker.stop();
+    network_worker.stop();
     image_builder.stop();
 }

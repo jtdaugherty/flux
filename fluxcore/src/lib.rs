@@ -2,6 +2,7 @@
 #[macro_use]
 extern crate serde_derive;
 extern crate serde;
+extern crate serde_cbor;
 extern crate nalgebra;
 extern crate samplers;
 extern crate rand;

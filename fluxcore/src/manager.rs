@@ -7,6 +7,11 @@ use std::thread;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH, Duration};
 
+use serde_cbor::to_writer;
+use serde_cbor::StreamDeserializer;
+use serde_cbor::de::IoRead;
+use std::net::TcpStream;
+
 use scene::{Scene, SceneData};
 use color::Color;
 use image::Image;
@@ -26,6 +31,7 @@ fn to_ms(d: Duration) -> u64 {
     d.as_secs() * 1000 + d.subsec_nanos() as u64 / 1_000_000
 }
 
+#[derive(Serialize, Deserialize)]
 pub enum RenderEvent {
     RenderingStarted { job_id: JobID, start_time: SystemTime, },
     ImageInfo { scene_name: String, width: usize, height: usize },
@@ -43,6 +49,13 @@ pub struct RenderManager {
     job_id_allocator: JobIDAllocator,
     job_queue: Sender<Option<(Job, Sender<()>)>>,
     thread_handle: thread::JoinHandle<()>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum NetworkWorkerRequest {
+    SetJob(Job),
+    WorkUnit(WorkUnit),
+    Done,
 }
 
 type WorkerRequest = Option<(Job, Receiver<Option<WorkUnit>>, Sender<Option<RenderEvent>>, WaitGroup)>;
@@ -154,6 +167,78 @@ impl RenderManager {
 pub trait Worker {
     fn handle(&self) -> WorkerHandle;
     fn stop(self);
+}
+
+pub struct NetworkWorker {
+    sender: Sender<WorkerRequest>,
+    thread_handle: thread::JoinHandle<()>,
+}
+
+impl NetworkWorker {
+    pub fn new(host: String, port: String) -> NetworkWorker {
+        let addr = format!("{}:{}", host, port);
+        let stream = TcpStream::connect(addr).unwrap();
+
+        let (s, r): (Sender<WorkerRequest>, Receiver<WorkerRequest>) = unbounded();
+
+        let handle = thread::spawn(move || {
+            let mut my_stream = stream;
+            let stream_clone = my_stream.try_clone().unwrap();
+            let mut stream_de: StreamDeserializer<'_, IoRead<TcpStream>, RenderEvent> =
+                StreamDeserializer::new(IoRead::new(stream_clone));
+
+            while let Ok(Some((job, recv_unit, send_result, wg))) = r.recv() {
+                d_println(format!("Network worker: got job {:?}", job.id));
+
+                to_writer(&mut my_stream, &NetworkWorkerRequest::SetJob(job)).unwrap();
+
+                while let Ok(Some(unit)) = recv_unit.recv() {
+                    d_println(format!("Network worker: got work unit {:?}", unit));
+
+                    to_writer(&mut my_stream, &NetworkWorkerRequest::WorkUnit(unit)).unwrap();
+
+                    match stream_de.next() {
+                        None => {
+                            println!("Stream deserializer iterator finished");
+                        },
+                        Some(result) => {
+                            match result {
+                                Ok(ev) => {
+                                    send_result.send(Some(ev)).unwrap();
+                                },
+                                Err(e) => {
+                                    println!("Network worker got error from deserializer: {}", e);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                d_println(format!("Network worker finished job"));
+                drop(wg);
+            }
+
+            d_println(format!("Network worker shutting down"));
+        });
+
+        NetworkWorker {
+            sender: s,
+            thread_handle: handle,
+        }
+    }
+}
+
+impl Worker for NetworkWorker {
+    fn handle(&self) -> WorkerHandle {
+        WorkerHandle {
+            sender: self.sender.clone(),
+        }
+    }
+
+    fn stop(self) {
+        self.sender.send(None).unwrap();
+        self.thread_handle.join().unwrap();
+    }
 }
 
 pub struct LocalWorker {

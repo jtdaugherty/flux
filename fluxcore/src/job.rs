@@ -45,7 +45,7 @@ pub struct WorkUnit {
 
 #[derive(Clone)]
 #[derive(Copy)]
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct JobConfiguration {
     pub sample_root: usize,
     pub max_trace_depth: usize,
@@ -55,7 +55,7 @@ pub struct JobConfiguration {
 // A job provides all the resources and configuration needed to render a
 // scene.
 #[derive(Clone)]
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Job {
     pub id: JobID,
     pub scene_data: SceneData,

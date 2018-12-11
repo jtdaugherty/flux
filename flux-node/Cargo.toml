@@ -5,3 +5,5 @@ authors = ["Jonathan Daugherty <cygnus@foobox.com>"]
 
 [dependencies]
 fluxcore = { path = "../fluxcore" }
+serde_cbor = "0.9"
+crossbeam = "0.5.0"
