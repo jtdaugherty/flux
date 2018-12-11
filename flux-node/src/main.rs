@@ -85,7 +85,7 @@ fn run_server(bind_address: String, worker: LocalWorker) -> io::Result<()> {
 }
 
 fn main() -> io::Result<()> {
-    let listen_host = "127.0.0.1";
+    let listen_host = "0.0.0.0";
     let listen_port = "2000";
     let bind_address = format!("{}:{}", listen_host, listen_port);
 

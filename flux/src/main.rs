@@ -134,7 +134,7 @@ fn main() {
     let local_worker = LocalWorker::new();
 
     println!("Connecting to network worker");
-    let host = String::from("localhost");
+    let host = String::from("foundry");
     let port = String::from("2000");
     let network_worker = NetworkWorker::new(host, port);
 
