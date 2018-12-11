@@ -1,5 +1,4 @@
 
-use num::traits::Pow;
 use nalgebra::{Vector3};
 
 use common::Hit;
@@ -65,7 +64,7 @@ impl BRDF for GlossySpecular {
             wi0
         };
 
-        let phong_lobe = r.dot(&wi).pow(self.exp);
+        let phong_lobe = r.dot(&wi).powf(self.exp);
         let pdf = phong_lobe * hit.normal.dot(&wi);
         let color = self.cs * self.ks * phong_lobe;
 

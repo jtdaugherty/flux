@@ -7,9 +7,6 @@ use rand::IsaacRng;
 use rand::Rng;
 use rand::distributions::{Distribution, Uniform};
 
-extern crate num;
-use num::traits::Pow;
-
 #[macro_use] extern crate itertools;
 
 #[derive(Debug)]
@@ -54,7 +51,7 @@ pub fn to_hemisphere(points: Vec<UnitSquareSample>, e: f64) -> Vec<Vector3<f64>>
         |p| {
             let cos_phi = (2.0 * std::f64::consts::PI * p.x).cos();
             let sin_phi = (2.0 * std::f64::consts::PI * p.x).sin();
-            let cos_theta = Pow::pow(1.0 - p.y, 1.0 / (e + 1.0));
+            let cos_theta = (1.0 - p.y).powf(1.0 / (e + 1.0));
             let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
             let pu = sin_theta * cos_phi;
             let pv = sin_theta * sin_phi;
