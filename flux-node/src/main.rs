@@ -18,7 +18,7 @@ fn handle_client(mut stream: TcpStream) -> io::Result<()> {
     match stream.read(&mut buf) {
         Ok(num) => {
             println!("Read {} bytes: \"{}\"", num, String::from_utf8_lossy(&buf[0..num]));
-            stream.write(&buf);
+            stream.write(&buf)?;
         }
         _ => {
             println!("Failed to read from client");
@@ -32,7 +32,7 @@ fn run_server(bind_address: String) -> io::Result<()> {
     let listener = TcpListener::bind(bind_address)?;
 
     for stream in listener.incoming() {
-        handle_client(stream?);
+        handle_client(stream?)?;
     }
 
     Ok(())
@@ -45,7 +45,7 @@ fn main() -> io::Result<()> {
 
     println!("Bind address: {}", bind_address);
 
-    run_server(bind_address);
+    run_server(bind_address)?;
 
     Ok(())
 }
