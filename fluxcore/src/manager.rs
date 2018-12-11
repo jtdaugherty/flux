@@ -33,6 +33,7 @@ pub enum RenderEvent {
     RenderingFinished { end_time: SystemTime },
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct WorkUnitResult {
     pub work_unit: WorkUnit,
     pub rows: Vec<Vec<Color>>,

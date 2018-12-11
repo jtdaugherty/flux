@@ -8,6 +8,7 @@ use scene::SceneData;
 #[derive(Eq)]
 #[derive(Clone)]
 #[derive(Copy)]
+#[derive(Serialize, Deserialize)]
 pub struct JobID(usize, usize);
 
 pub struct JobIDAllocator {
@@ -35,6 +36,7 @@ impl JobIDAllocator {
 #[derive(Debug)]
 #[derive(Clone)]
 #[derive(Copy)]
+#[derive(Serialize, Deserialize)]
 pub struct WorkUnit {
     pub row_start: usize,
     pub row_end: usize,
