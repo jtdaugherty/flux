@@ -26,6 +26,14 @@ impl Image {
 
     pub fn set_pixel(&mut self, row_index: usize, col_index: usize, value: Color) {
         if col_index >= self.pixels[row_index].len() {
+            if col_index >= self.width {
+                panic!("set_pixel col_index {} too big", col_index);
+            }
+
+            if row_index >= self.height {
+                panic!("set_pixel row_index {} too big", row_index);
+            }
+
             self.pixels[row_index].resize(col_index + 1, Color::black());
         }
 
