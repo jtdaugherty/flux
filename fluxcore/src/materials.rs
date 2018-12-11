@@ -20,7 +20,8 @@ impl Material for Matte {
                   set_index: usize, sample_index: usize) -> Color {
         let wo = -1.0 * hit.ray.direction;
         let hemi_sample = &samples.hemi_sets[set_index][hit.depth - 1][sample_index];
-        let (wi, pdf, f) = self.diffuse_brdf.sample_f(hit, &wo, &hemi_sample);
+        let sq_sample = &samples.pixel_sets[set_index][sample_index];
+        let (wi, pdf, f) = self.diffuse_brdf.sample_f(hit, &wo, &hemi_sample, &sq_sample);
         let ndotwi = hit.normal.dot(&wi);
         let reflected_ray = Ray {
             origin: hit.local_hit_point,
@@ -57,7 +58,8 @@ impl Material for Reflective {
                   set_index: usize, sample_index: usize) -> Color {
         let wo = hit.ray.direction * -1.0;
         let hemi_sample = &samples.hemi_sets[set_index][hit.depth - 1][sample_index];
-        let (wi, pdf, fr) = self.reflective_brdf.sample_f(hit, &wo, &hemi_sample);
+        let sq_sample = &samples.pixel_sets[set_index][sample_index];
+        let (wi, pdf, fr) = self.reflective_brdf.sample_f(hit, &wo, &hemi_sample, &sq_sample);
 
         let reflected_ray = Ray {
             origin: hit.local_hit_point,

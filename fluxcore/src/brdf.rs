@@ -1,12 +1,13 @@
 
 use nalgebra::{Vector3};
 
+use samplers::{to_unit_hemi, UnitSquareSample};
 use common::Hit;
 use color::Color;
 use constants::INV_PI;
 
 pub trait BRDF: Send + Sync {
-    fn sample_f(&self, hit: &Hit, wo: &Vector3<f64>, hemi_sample: &Vector3<f64>) -> (Vector3<f64>, f64, Color);
+    fn sample_f(&self, hit: &Hit, wo: &Vector3<f64>, hemi_sample: &Vector3<f64>, square_sample: &UnitSquareSample) -> (Vector3<f64>, f64, Color);
 }
 
 pub struct Lambertian {
@@ -15,7 +16,7 @@ pub struct Lambertian {
 }
 
 impl BRDF for Lambertian {
-    fn sample_f(&self, hit: &Hit, _wo: &Vector3<f64>, hemi_sample: &Vector3<f64>) -> (Vector3<f64>, f64, Color) {
+    fn sample_f(&self, hit: &Hit, _wo: &Vector3<f64>, hemi_sample: &Vector3<f64>, _square_sample: &UnitSquareSample) -> (Vector3<f64>, f64, Color) {
         let w = hit.normal;
         let v = Vector3::new(0.0034, 1.0, 0.0071).cross(&w).normalize();
         let u = v.cross(&w);
@@ -33,7 +34,7 @@ pub struct PerfectSpecular {
 }
 
 impl BRDF for PerfectSpecular {
-    fn sample_f(&self, hit: &Hit, wo: &Vector3<f64>, _hemi_sample: &Vector3<f64>) -> (Vector3<f64>, f64, Color) {
+    fn sample_f(&self, hit: &Hit, wo: &Vector3<f64>, _hemi_sample: &Vector3<f64>, _square_sample: &UnitSquareSample) -> (Vector3<f64>, f64, Color) {
         let ndotwo = hit.normal.dot(&wo);
         let wi = -wo + hit.normal * ndotwo * 2.0;
         let pdf = hit.normal.dot(&wi);
@@ -48,14 +49,15 @@ pub struct GlossySpecular {
 }
 
 impl BRDF for GlossySpecular {
-    fn sample_f(&self, hit: &Hit, wo: &Vector3<f64>, hemi_sample: &Vector3<f64>) -> (Vector3<f64>, f64, Color) {
+    fn sample_f(&self, hit: &Hit, wo: &Vector3<f64>, _hemi_sample: &Vector3<f64>, pixel_sample: &UnitSquareSample) -> (Vector3<f64>, f64, Color) {
         let ndotwo = hit.normal.dot(&wo);
-        let r = -wo + (hit.normal * ndotwo * 2.0);
+        let r = -wo + hit.normal * ndotwo * 2.0;
 
         let w = r;
         let u = Vector3::new(0.00424, 1.0, 0.00764).cross(&w).normalize();
         let v = u.cross(&w);
 
+        let hemi_sample = to_unit_hemi(&pixel_sample, self.exp);
         let wi0 = u * hemi_sample.x + v * hemi_sample.y + w * hemi_sample.z;
 
         let wi = if hit.normal.dot(&wi0) < 0.0 {
