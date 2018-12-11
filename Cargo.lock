@@ -154,6 +154,9 @@ dependencies = [
 [[package]]
 name = "flux-node"
 version = "0.1.0"
+dependencies = [
+ "fluxcore 0.1.0",
+]
 
 [[package]]
 name = "fluxcore"
