@@ -8,6 +8,7 @@ use std::ops::Add;
 #[derive(Clone)]
 #[derive(Copy)]
 #[derive(Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct Color {
     pub r: f64,
     pub g: f64,

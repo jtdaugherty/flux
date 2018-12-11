@@ -10,6 +10,7 @@ use brdf::*;
 use sampling::MasterSampleSets;
 
 #[derive(Clone)]
+#[derive(Serialize, Deserialize)]
 pub struct CameraSettings {
     pub eye: Point3<f64>,
     pub look_at: Point3<f64>,
@@ -32,6 +33,7 @@ impl CameraSettings {
 // objects, etc. The idea is that when we're ready to start rendering a
 // scene, we'll build a Scene from a SceneData.
 #[derive(Clone)]
+#[derive(Serialize, Deserialize)]
 pub struct SceneData {
     pub scene_name: String,
     pub output_settings: OutputSettings,
@@ -42,6 +44,7 @@ pub struct SceneData {
 }
 
 #[derive(Clone)]
+#[derive(Serialize, Deserialize)]
 pub struct CameraData {
     pub zoom_factor: f64,
     pub view_plane_distance: f64,
@@ -50,6 +53,7 @@ pub struct CameraData {
 }
 
 #[derive(Clone)]
+#[derive(Serialize, Deserialize)]
 pub struct OutputSettings {
     pub image_width: usize,
     pub image_height: usize,
@@ -58,6 +62,7 @@ pub struct OutputSettings {
 
 #[derive(Copy)]
 #[derive(Clone)]
+#[derive(Serialize, Deserialize)]
 pub enum ShapeData {
     Sphere(SphereData),
     Plane(PlaneData),

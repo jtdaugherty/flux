@@ -13,6 +13,7 @@ pub struct Sphere {
 
 #[derive(Clone)]
 #[derive(Copy)]
+#[derive(Serialize, Deserialize)]
 pub struct SphereData {
     pub center: Point3<f64>,
     pub radius: f64,
@@ -27,6 +28,7 @@ pub struct Plane {
 
 #[derive(Clone)]
 #[derive(Copy)]
+#[derive(Serialize, Deserialize)]
 pub struct PlaneData {
     pub point: Point3<f64>,
     pub normal: Vector3<f64>,
@@ -35,6 +37,7 @@ pub struct PlaneData {
 
 #[derive(Copy)]
 #[derive(Clone)]
+#[derive(Serialize, Deserialize)]
 pub enum MaterialData {
     Matte(MatteData),
     Emissive(EmissiveData),
@@ -44,6 +47,7 @@ pub enum MaterialData {
 
 #[derive(Clone)]
 #[derive(Copy)]
+#[derive(Serialize, Deserialize)]
 pub struct MatteData {
     pub diffuse_color: Color,
     pub ambient_color: Color,
@@ -52,6 +56,7 @@ pub struct MatteData {
 
 #[derive(Clone)]
 #[derive(Copy)]
+#[derive(Serialize, Deserialize)]
 pub struct EmissiveData {
     pub color: Color,
     pub power: f64,
@@ -59,6 +64,7 @@ pub struct EmissiveData {
 
 #[derive(Clone)]
 #[derive(Copy)]
+#[derive(Serialize, Deserialize)]
 pub struct ReflectiveData {
     pub reflect_amount: f64,
     pub reflect_color: Color,
@@ -66,6 +72,7 @@ pub struct ReflectiveData {
 
 #[derive(Clone)]
 #[derive(Copy)]
+#[derive(Serialize, Deserialize)]
 pub struct GlossyReflectiveData {
     pub reflect_amount: f64,
     pub reflect_color: Color,
