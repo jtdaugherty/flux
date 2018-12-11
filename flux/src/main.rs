@@ -20,9 +20,9 @@ use fluxcore::color::Color;
 
 fn main() {
     let c = JobConfiguration {
-        rows_per_work_unit: 100,
+        rows_per_work_unit: 10,
         max_trace_depth: 10,
-        sample_root: 3,
+        sample_root: 32,
     };
     let s = SceneData {
         scene_name: String::from("test_scene"),
@@ -32,8 +32,8 @@ fn main() {
             pixel_size: 0.5,
         },
         camera_settings: CameraSettings::new(
-                             Point3::new(0.0, 1.5, -9.0),
-                             Point3::new(0.0, 1.0, 0.0),
+                             Point3::new(2.5, 1.5, -9.0),
+                             Point3::new(2.5, 1.0, 0.0),
                              Vector3::new(0.0, 1.0, 0.0)),
         camera_data: CameraData {
             zoom_factor: 1.0,
@@ -54,7 +54,7 @@ fn main() {
                 })
             }),
             ShapeData::Sphere(SphereData {
-                center: Point3::new(-3.0, 1.0, -4.0),
+                center: Point3::new(0.0, 1.0, 0.0),
                 radius: 1.0,
                 invert: false,
                 material: MaterialData::Matte(MatteData {
@@ -64,7 +64,7 @@ fn main() {
                 })
             }),
             ShapeData::Sphere(SphereData {
-                center: Point3::new(1.5, 1.0, 2.0),
+                center: Point3::new(2.0, 1.0, 2.0),
                 radius: 1.0,
                 invert: false,
                 material: MaterialData::GlossyReflective(GlossyReflectiveData {
@@ -74,17 +74,17 @@ fn main() {
                 })
             }),
             ShapeData::Sphere(SphereData {
-                center: Point3::new(3.0, 1.0, 4.0),
+                center: Point3::new(4.0, 1.0, 4.0),
                 radius: 1.0,
                 invert: false,
                 material: MaterialData::GlossyReflective(GlossyReflectiveData {
                     reflect_amount: 0.9,
                     reflect_color: Color::new(0.9, 1.0, 0.9),
-                    reflect_exponent: 1000.0,
+                    reflect_exponent: 100000.0,
                 })
             }),
             ShapeData::Sphere(SphereData {
-                center: Point3::new(4.5, 1.0, 6.0),
+                center: Point3::new(6.0, 1.0, 2.0),
                 radius: 1.0,
                 invert: false,
                 material: MaterialData::Matte(MatteData {
