@@ -64,16 +64,6 @@ fn main() {
                 })
             }),
             ShapeData::Sphere(SphereData {
-                center: Point3::new(0.0, 1.0, 0.0),
-                radius: 1.0,
-                invert: false,
-                material: MaterialData::GlossyReflective(GlossyReflectiveData {
-                    reflect_amount: 0.9,
-                    reflect_color: Color::new(0.9, 1.0, 0.9),
-                    reflect_exponent: 1.0,
-                })
-            }),
-            ShapeData::Sphere(SphereData {
                 center: Point3::new(1.5, 1.0, 2.0),
                 radius: 1.0,
                 invert: false,
