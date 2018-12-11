@@ -47,17 +47,18 @@ impl Sampler {
 }
 
 pub fn to_hemisphere(points: Vec<UnitSquareSample>, e: f64) -> Vec<Vector3<f64>> {
-    points.iter().map(
-        |p| {
-            let cos_phi = (2.0 * std::f64::consts::PI * p.x).cos();
-            let sin_phi = (2.0 * std::f64::consts::PI * p.x).sin();
-            let cos_theta = (1.0 - p.y).powf(1.0 / (e + 1.0));
-            let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
-            let pu = sin_theta * cos_phi;
-            let pv = sin_theta * sin_phi;
-            let pw = cos_theta;
-            normalize(&Vector3::new(pu, pv, pw))
-        }).collect()
+    points.iter().map(|p| to_unit_hemi(p, e)).collect()
+}
+
+pub fn to_unit_hemi(p: &UnitSquareSample, e: f64) -> Vector3<f64> {
+    let cos_phi = (2.0 * std::f64::consts::PI * p.x).cos();
+    let sin_phi = (2.0 * std::f64::consts::PI * p.x).sin();
+    let cos_theta = (1.0 - p.y).powf(1.0 / (e + 1.0));
+    let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
+    let pu = sin_theta * cos_phi;
+    let pv = sin_theta * sin_phi;
+    let pw = cos_theta;
+    normalize(&Vector3::new(pu, pv, pw))
 }
 
 pub fn to_poisson_disc(points: Vec<UnitSquareSample>) -> Vec<UnitDiscSample> {
