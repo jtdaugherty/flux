@@ -192,6 +192,9 @@ impl NetworkWorker {
 
                 to_writer(&mut my_stream, &NetworkWorkerRequest::SetJob(job)).unwrap();
 
+                let unit0 = recv_unit.recv().unwrap().unwrap();
+                to_writer(&mut my_stream, &NetworkWorkerRequest::WorkUnit(unit0)).unwrap();
+
                 while let Ok(Some(unit)) = recv_unit.recv() {
                     d_println(format!("Network worker: got work unit {:?}", unit));
 
@@ -209,6 +212,22 @@ impl NetworkWorker {
                                 Err(e) => {
                                     println!("Network worker got error from deserializer: {}", e);
                                 }
+                            }
+                        }
+                    }
+                }
+
+                match stream_de.next() {
+                    None => {
+                        println!("Stream deserializer iterator finished");
+                    },
+                    Some(result) => {
+                        match result {
+                            Ok(ev) => {
+                                send_result.send(Some(ev)).unwrap();
+                            },
+                            Err(e) => {
+                                println!("Network worker got error from deserializer: {}", e);
                             }
                         }
                     }
