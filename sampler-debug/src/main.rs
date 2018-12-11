@@ -14,7 +14,7 @@ fn plot_hemi_sample(i: &mut Image, sample: Vector3<f64>) {
 }
 
 fn main() {
-    let sample_root = 100;
+    let sample_root = 5;
     let mut i = Image::new(100, 100);
 
     let mut sampler = samplers::Sampler::new();
