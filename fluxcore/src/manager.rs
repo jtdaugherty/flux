@@ -209,7 +209,7 @@ impl NetworkWorker {
 
                     match stream_de.next() {
                         None => {
-                            println!("Stream deserializer iterator finished");
+                            d_println("Stream deserializer iterator finished".to_string());
                         },
                         Some(result) => {
                             match result {
@@ -217,7 +217,7 @@ impl NetworkWorker {
                                     send_result.send(Some(ev)).unwrap();
                                 },
                                 Err(e) => {
-                                    println!("Network worker got error from deserializer: {}", e);
+                                    d_println(format!("Network worker got error from deserializer: {}", e));
                                     return;
                                 }
                             }
@@ -228,7 +228,7 @@ impl NetworkWorker {
                 for _ in 0..buf {
                     match stream_de.next() {
                         None => {
-                            println!("Stream deserializer iterator finished");
+                            d_println("Stream deserializer iterator finished".to_string());
                         },
                         Some(result) => {
                             match result {
@@ -236,7 +236,7 @@ impl NetworkWorker {
                                     send_result.send(Some(ev)).unwrap();
                                 },
                                 Err(e) => {
-                                    println!("Network worker got error from deserializer: {}", e);
+                                    d_println(format!("Network worker got error from deserializer: {}", e));
                                     return;
                                 }
                             }
