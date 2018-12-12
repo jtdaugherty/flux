@@ -33,6 +33,7 @@ fn handle_client(stream: TcpStream, worker: &WorkerHandle) -> io::Result<()> {
     let t_handle = thread::spawn(move || {
         let mut my_stream = thread_stream;
         while let Ok(Some(ev)) = re_recv.recv() {
+            println!("Got results from local worker, sending to manager");
             to_writer(&mut my_stream, &ev).unwrap();
         }
     });
