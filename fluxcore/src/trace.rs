@@ -57,7 +57,7 @@ impl Camera {
         let pixel_denom = 1.0 / ((self.config.sample_root * self.config.sample_root) as f64);
         let adjusted_pixel_size = s.output_settings.pixel_size / self.zoom_factor;
 
-        let rows: Vec<usize> = (work.row_start..work.row_end+1).collect();
+        let rows: Vec<usize> = (work.row_start..=work.row_end).collect();
         let row_pixel_vecs: Vec<Vec<Color>> = rows.par_iter().map(|row| {
             let sample_set_indexes = self.samples.shuffle_indices();
 
@@ -77,7 +77,7 @@ impl Camera {
                         origin: self.settings.eye + lpx * self.settings.u + lpy * self.settings.v,
                     };
 
-                    color += s.shade(r, 1, &self.samples, sample_set_indexes[col], index);
+                    color += s.shade(&r, 1, &self.samples, sample_set_indexes[col], index);
                 }
 
                 color *= pixel_denom;

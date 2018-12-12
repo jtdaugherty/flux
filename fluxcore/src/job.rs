@@ -26,7 +26,7 @@ impl JobIDAllocator {
         }
     }
 
-    pub fn next(&mut self) -> JobID {
+    pub fn next_id(&mut self) -> JobID {
         let j = JobID(self.allocator_id, self.next_id);
         self.next_id += 1;
         j
@@ -64,7 +64,7 @@ pub struct Job {
 
 impl Job {
     pub fn work_units(&self) -> Vec<WorkUnit> {
-        if self.config.rows_per_work_unit <= 0 {
+        if self.config.rows_per_work_unit == 0 {
             panic!("Job row per work unit count invalid: {}",
                    self.config.rows_per_work_unit);
         }

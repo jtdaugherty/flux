@@ -146,18 +146,18 @@ impl Scene {
         }
     }
 
-    fn hit(&self, r: Ray, depth: usize) -> Option<Hit> {
+    fn hit(&self, r: &Ray, depth: usize) -> Option<Hit> {
         self.shapes.iter()
             .filter_map(|o| o.hit(&r, depth))
             .min_by(Hit::compare)
     }
 
-    pub fn shade(&self, r: Ray, depth: usize, samples: &MasterSampleSets,
+    pub fn shade(&self, r: &Ray, depth: usize, samples: &MasterSampleSets,
                  set_index: usize, sample_index: usize) -> Color {
         if depth > self.job_config.max_trace_depth {
             Color::black()
         } else {
-            match self.hit(r, depth) {
+            match self.hit(&r, depth) {
                 None => self.background,
                 Some(h) => h.material.path_shade(&self, &h, &samples, set_index, sample_index),
             }

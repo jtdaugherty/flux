@@ -28,7 +28,7 @@ impl Material for Matte {
             direction: wi,
         };
 
-        f * scene.shade(reflected_ray, hit.depth + 1, &samples, set_index, sample_index) *
+        f * scene.shade(&reflected_ray, hit.depth + 1, &samples, set_index, sample_index) *
             (ndotwi / pdf)
     }
 }
@@ -66,7 +66,7 @@ impl Material for Reflective {
             direction: wi,
         };
 
-        fr * scene.shade(reflected_ray, hit.depth + 1, &samples, set_index, sample_index) *
+        fr * scene.shade(&reflected_ray, hit.depth + 1, &samples, set_index, sample_index) *
             (hit.normal.dot(&wi) / pdf)
     }
 }

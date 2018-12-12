@@ -53,19 +53,19 @@ pub struct RenderManager {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum NetworkWorkerRequest {
-    SetJob(Job),
+    SetJob(Box<Job>),
     WorkUnit(WorkUnit),
     Done,
 }
 
-type WorkerRequest = Option<(Job, Receiver<Option<WorkUnit>>, Sender<Option<RenderEvent>>, WaitGroup)>;
+type WorkerRequest = Option<(Box<Job>, Receiver<Option<WorkUnit>>, Sender<Option<RenderEvent>>, WaitGroup)>;
 
 pub struct WorkerHandle {
     sender: Sender<WorkerRequest>,
 }
 
 impl WorkerHandle {
-    pub fn send(&self, j: Job, r: Receiver<Option<WorkUnit>>, s: Sender<Option<RenderEvent>>, wg: WaitGroup) -> Result<(), SendError<WorkerRequest>> {
+    pub fn send(&self, j: Box<Job>, r: Receiver<Option<WorkUnit>>, s: Sender<Option<RenderEvent>>, wg: WaitGroup) -> Result<(), SendError<WorkerRequest>> {
         self.sender.send(Some((j, r, s, wg)))
     }
 }
@@ -82,7 +82,7 @@ impl JobHandle {
 
 impl RenderManager {
     pub fn new(workers: Vec<WorkerHandle>, result_sender: Sender<Option<RenderEvent>>) -> RenderManager {
-        if workers.len() == 0 {
+        if workers.is_empty() {
             panic!("RenderManager::new: must provide at least one worker handle");
         }
 
@@ -116,7 +116,8 @@ impl RenderManager {
 
                 workers.iter().for_each(|worker| {
                     ws.send(None).unwrap();
-                    worker.send(job.clone(), wr.clone(), result_sender.clone(), wg.clone()).unwrap();
+                    let job_boxed = Box::new(job.clone());
+                    worker.send(job_boxed, wr.clone(), result_sender.clone(), wg.clone()).unwrap();
                 });
 
                 d_println(format!("Render manager: waiting for job completion"));
@@ -145,7 +146,7 @@ impl RenderManager {
     }
 
     pub fn schedule_job(&mut self, scene_data: SceneData, config: JobConfiguration) -> JobHandle {
-        let id = self.job_id_allocator.next();
+        let id = self.job_id_allocator.next_id();
         let (s, r): (Sender<()>, Receiver<()>) = unbounded();
         let j = Job {
             scene_data,
@@ -175,7 +176,7 @@ pub struct NetworkWorker {
 }
 
 impl NetworkWorker {
-    pub fn new(host: String, port: String) -> NetworkWorker {
+    pub fn new(host: &str, port: &str) -> NetworkWorker {
         let addr = format!("{}:{}", host, port);
         let stream = TcpStream::connect(addr).unwrap();
 
@@ -187,10 +188,12 @@ impl NetworkWorker {
             let mut stream_de: StreamDeserializer<'_, IoRead<TcpStream>, RenderEvent> =
                 StreamDeserializer::new(IoRead::new(stream_clone));
 
-            while let Ok(Some((job, recv_unit, send_result, wg))) = r.recv() {
+            while let Ok(Some((job_boxed, recv_unit, send_result, wg))) = r.recv() {
+                let job = *job_boxed;
+
                 d_println(format!("Network worker: got job {:?}", job.id));
 
-                to_writer(&mut my_stream, &NetworkWorkerRequest::SetJob(job)).unwrap();
+                to_writer(&mut my_stream, &NetworkWorkerRequest::SetJob(Box::new(job))).unwrap();
 
                 let buf = 2;
 
@@ -279,7 +282,7 @@ impl LocalWorker {
             while let Ok(Some((job, recv_unit, send_result, wg))) = r.recv() {
                 d_println(format!("Local worker: got job {:?}", job.id));
 
-                let scene = Scene::from_data(job.scene_data, job.config.clone());
+                let scene = Scene::from_data(job.scene_data, job.config);
                 let camera = Camera::new(scene.camera_settings.clone(),
                                          job.config,
                                          scene.output_settings.image_width,
@@ -387,7 +390,7 @@ impl ImageBuilder {
             d_println(format!("ImageBuilder: image {} x {} pixels", width, height));
 
             let start_time = match r.recv() {
-                Ok(Some(RenderEvent::RenderingStarted { job_id: _, start_time, })) => start_time,
+                Ok(Some(RenderEvent::RenderingStarted { start_time, .. })) => start_time,
                 _ => panic!("ImageBuilder: got unexpected message when expecting render start message"),
             };
 

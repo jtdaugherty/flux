@@ -80,7 +80,7 @@ fn main() {
                 material: MaterialData::GlossyReflective(GlossyReflectiveData {
                     reflect_amount: 0.9,
                     reflect_color: Color::new(0.9, 1.0, 0.9),
-                    reflect_exponent: 100000.0,
+                    reflect_exponent: 100_000.0,
                 })
             }),
             ShapeData::Sphere(SphereData {
@@ -134,8 +134,8 @@ fn main() {
     let local_worker = LocalWorker::new();
 
     println!("Connecting to network worker");
-    let host = String::from("foundry");
-    let port = String::from("2000");
+    let host = "192.168.50.16";
+    let port = "2000";
     let network_worker = NetworkWorker::new(host, port);
 
     let image_builder = ImageBuilder::new();
@@ -163,7 +163,7 @@ fn main() {
                                 if !copied_rows[y] {
                                     let ps = &img.pixels[y];
 
-                                    if ps.len() > 0 {
+                                    if !ps.is_empty() {
                                         for (x, pixel) in ps.iter().enumerate() {
                                             let offset = y*pitch + x*3;
                                             buffer[offset] = (pixel.r * 255.99) as u8;

@@ -37,7 +37,7 @@ fn handle_client(stream: TcpStream, worker: &WorkerHandle) -> io::Result<()> {
         }
     });
 
-    for result in stream_de.into_iter() {
+    for result in stream_de {
         match result {
             Ok(req) => {
                 match req {
@@ -73,7 +73,7 @@ fn handle_client(stream: TcpStream, worker: &WorkerHandle) -> io::Result<()> {
     Ok(())
 }
 
-fn run_server(bind_address: String, worker: LocalWorker) -> io::Result<()> {
+fn run_server(bind_address: String, worker: &LocalWorker) -> io::Result<()> {
     let listener = TcpListener::bind(bind_address)?;
     let handle = worker.handle();
 
@@ -92,7 +92,9 @@ fn main() -> io::Result<()> {
     println!("Bind address: {}", bind_address);
 
     let worker = LocalWorker::new();
-    run_server(bind_address, worker)?;
+    run_server(bind_address, &worker)?;
+
+    worker.stop();
 
     Ok(())
 }
