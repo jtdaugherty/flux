@@ -63,7 +63,7 @@ fn handle_client(stream: TcpStream, worker: &WorkerHandle) -> io::Result<()> {
                 }
             },
             Err(err) => {
-                println!("Got error: {}", err);
+                return Err(io::Error::new(io::ErrorKind::Other, format!("{}", err)));
             }
         }
     }
@@ -78,7 +78,13 @@ fn run_server(bind_address: String, worker: &LocalWorker) -> io::Result<()> {
     let handle = worker.handle();
 
     for stream in listener.incoming() {
-        handle_client(stream?, &handle)?;
+        match handle_client(stream?, &handle) {
+            Ok(()) => {
+            },
+            Err(e) => {
+                println!("run_server: handle_client exited with {}", e);
+            }
+        }
     }
 
     Ok(())
