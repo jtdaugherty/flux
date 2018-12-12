@@ -218,6 +218,7 @@ impl NetworkWorker {
                                 },
                                 Err(e) => {
                                     println!("Network worker got error from deserializer: {}", e);
+                                    return;
                                 }
                             }
                         }
@@ -236,6 +237,7 @@ impl NetworkWorker {
                                 },
                                 Err(e) => {
                                     println!("Network worker got error from deserializer: {}", e);
+                                    return;
                                 }
                             }
                         }
