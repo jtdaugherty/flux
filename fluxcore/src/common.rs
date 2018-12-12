@@ -1,7 +1,8 @@
 
 use std::cmp::Ordering;
 use nalgebra::{Vector3, Point3};
-use materials::Material;
+
+use crate::materials::Material;
 
 pub struct Hit<'a> {
     pub local_hit_point: Point3<f64>,

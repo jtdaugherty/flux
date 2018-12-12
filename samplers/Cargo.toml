@@ -2,6 +2,7 @@
 name = "samplers"
 version = "0.1.0"
 authors = ["Jonathan Daugherty <cygnus@foobox.com>"]
+edition = "2018"
 
 [dependencies]
 rand = "0.5.5"

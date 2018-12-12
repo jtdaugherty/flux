@@ -12,11 +12,11 @@ use serde_cbor::StreamDeserializer;
 use serde_cbor::de::IoRead;
 use std::net::TcpStream;
 
-use scene::{Scene, SceneData};
-use color::Color;
-use image::Image;
-use job::{JobConfiguration, Job, JobID, JobIDAllocator, WorkUnit};
-use trace::Camera;
+use crate::scene::{Scene, SceneData};
+use crate::color::Color;
+use crate::image::Image;
+use crate::job::{JobConfiguration, Job, JobID, JobIDAllocator, WorkUnit};
+use crate::trace::Camera;
 
 const DEBUG: bool = false;
 
@@ -403,7 +403,7 @@ impl ImageBuilder {
                                           unit_result.work_unit.row_end - unit_result.work_unit.row_start + 1));
 
                         let mut opt = img_ref_thread.lock().unwrap();
-                        let mut img = opt.as_mut().unwrap();
+                        let img = opt.as_mut().unwrap();
                         for (i, row) in unit_result.rows.into_iter().enumerate() {
                             img.set_row(i + unit_result.work_unit.row_start, row);
                         }
@@ -415,7 +415,7 @@ impl ImageBuilder {
                         let filename = scene_name.clone() + ".ppm";
                         let mut output_file = File::create(filename).unwrap();
                         let mut opt = img_ref_thread.lock().unwrap();
-                        let mut img = opt.as_mut().unwrap();
+                        let img = opt.as_mut().unwrap();
                         img.write(&mut output_file);
                     },
                     _ => panic!("ImageBuilder: got unexpected message"),

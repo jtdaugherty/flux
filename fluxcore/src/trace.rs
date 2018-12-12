@@ -1,13 +1,15 @@
 
 use nalgebra::{Vector3};
-use sampling::MasterSampleSets;
-use samplers::Sampler;
-use color::Color;
-use scene::{Scene, CameraSettings};
-use common::Ray;
-use manager::WorkUnitResult;
-use job::{JobConfiguration, WorkUnit};
 use rayon::prelude::*;
+
+use samplers::Sampler;
+
+use crate::sampling::MasterSampleSets;
+use crate::color::Color;
+use crate::scene::{Scene, CameraSettings};
+use crate::common::Ray;
+use crate::manager::WorkUnitResult;
+use crate::job::{JobConfiguration, WorkUnit};
 
 pub struct Camera {
     pub settings: CameraSettings,

@@ -1,9 +1,10 @@
 
 use nalgebra::{Vector3, Point3};
-use constants::*;
-use common::*;
-use materials::*;
-use color::Color;
+
+use crate::constants::*;
+use crate::common::*;
+use crate::materials::*;
+use crate::color::Color;
 
 pub struct Sphere {
     pub data: SphereData,

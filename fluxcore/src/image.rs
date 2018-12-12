@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::BufWriter;
 use std::io::Write;
 
-use color::Color;
+use crate::color::Color;
 
 pub struct Image {
     pub height: usize,

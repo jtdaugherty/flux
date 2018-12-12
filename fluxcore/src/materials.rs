@@ -1,9 +1,9 @@
 
-use brdf::*;
-use common::*;
-use color::Color;
-use scene::Scene;
-use sampling::MasterSampleSets;
+use crate::brdf::*;
+use crate::common::*;
+use crate::color::Color;
+use crate::scene::Scene;
+use crate::sampling::MasterSampleSets;
 
 pub trait Material: Sync + Send {
     fn path_shade(&self, scene: &Scene, hit: &Hit, samples: &MasterSampleSets,

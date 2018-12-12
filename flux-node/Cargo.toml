@@ -2,6 +2,7 @@
 name = "flux-node"
 version = "0.1.0"
 authors = ["Jonathan Daugherty <cygnus@foobox.com>"]
+edition = "2018"
 
 [dependencies]
 fluxcore = { path = "../fluxcore" }

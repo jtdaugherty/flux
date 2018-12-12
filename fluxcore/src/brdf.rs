@@ -1,10 +1,10 @@
 
 use nalgebra::{Vector3};
 
-use samplers::{to_unit_hemi, UnitSquareSample};
-use common::Hit;
-use color::Color;
-use constants::INV_PI;
+use crate::samplers::{to_unit_hemi, UnitSquareSample};
+use crate::common::Hit;
+use crate::color::Color;
+use crate::constants::INV_PI;
 
 pub trait BRDF: Send + Sync {
     fn sample_f(&self, hit: &Hit, wo: &Vector3<f64>,

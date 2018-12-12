@@ -1,13 +1,13 @@
 
 use nalgebra::{Vector3, Point3};
 
-use color::Color;
-use common::{Ray, Intersectable, Hit};
-use shapes::*;
-use job::JobConfiguration;
-use materials::*;
-use brdf::*;
-use sampling::MasterSampleSets;
+use crate::color::Color;
+use crate::common::{Ray, Intersectable, Hit};
+use crate::shapes::*;
+use crate::job::JobConfiguration;
+use crate::materials::*;
+use crate::brdf::*;
+use crate::sampling::MasterSampleSets;
 
 #[derive(Clone)]
 #[derive(Serialize, Deserialize, Debug)]

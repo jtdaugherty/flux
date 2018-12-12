@@ -1,7 +1,7 @@
 
 use rand::Rng;
 
-use scene::SceneData;
+use crate::scene::SceneData;
 
 #[derive(Debug)]
 #[derive(PartialEq)]
