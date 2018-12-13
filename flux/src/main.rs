@@ -32,7 +32,7 @@ fn main() {
     println!("{:?}", config);
 
     let c = JobConfiguration {
-        rows_per_work_unit: 50,
+        rows_per_work_unit: config.rows_per_work_unit,
         max_trace_depth: config.max_depth,
         sample_root: config.sample_root,
     };
@@ -253,6 +253,7 @@ struct Config {
     use_local_worker: bool,
     sample_root: usize,
     max_depth: usize,
+    rows_per_work_unit: usize,
 }
 
 fn config_from_args() -> Config {
@@ -271,6 +272,12 @@ fn config_from_args() -> Config {
              .value_name("DEPTH")
              .help("Tracing depth")
              .takes_value(true))
+        .arg(Arg::with_name("rowsperunit")
+             .short("R")
+             .long("rows")
+             .value_name("COUNT")
+             .help("Image rows per work unit")
+             .takes_value(true))
         .arg(Arg::with_name("skip_local")
              .short("L")
              .help("Do not use the local host for rendering")
@@ -283,6 +290,7 @@ fn config_from_args() -> Config {
 
     let ms = app.get_matches();
     let default_port = DEFAULT_PORT;
+    let default_rows_per_work_unit = 50;
 
     Config {
         sample_root: match ms.value_of("sample_root") {
@@ -292,6 +300,10 @@ fn config_from_args() -> Config {
         max_depth: match ms.value_of("depth") {
             None => DEFAULT_DEPTH,
             Some(d) => usize::from_str(d).unwrap(),
+        },
+        rows_per_work_unit: match ms.value_of("rowsperunit") {
+            None => default_rows_per_work_unit,
+            Some(r) => usize::from_str(r).unwrap(),
         },
         use_local_worker: match ms.occurrences_of("skip_local") {
             0 => true,
