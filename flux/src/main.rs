@@ -125,13 +125,14 @@ fn main() {
         return;
     }
 
-    let mut workers: Vec<Box<Worker>> = vec![];
     let mut worker_handles: Vec<WorkerHandle> = vec![];
+    let mut local_worker: Option<LocalWorker> = None;
+    let mut net_workers: Vec<NetworkWorker> = vec![];
 
     if config.use_local_worker {
         let worker = LocalWorker::new();
         worker_handles.push(worker.handle());
-        workers.push(Box::new(worker));
+        local_worker = Some(worker);
     }
 
     for endpoint in config.network_workers {
@@ -140,7 +141,7 @@ fn main() {
         let port = "2000";
         let worker = NetworkWorker::new(host, port);
         worker_handles.push(worker.handle());
-        workers.push(Box::new(worker));
+        net_workers.push(worker);
     }
 
     // SDL setup /////////////////////////////////////////////////////////////
@@ -235,11 +236,17 @@ fn main() {
     }
 
     println!("Shutting down");
-    // manager.stop();
 
-    // drop(workers);
+    if let Some(w) = local_worker {
+        w.stop();
+    }
 
-    // image_builder.stop();
+    for w in net_workers {
+        w.stop();
+    }
+
+    manager.stop();
+    image_builder.stop();
 }
 
 #[derive(Debug)]
