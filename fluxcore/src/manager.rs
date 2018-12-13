@@ -146,11 +146,11 @@ impl RenderManager {
         }
     }
 
-    pub fn schedule_job(&mut self, scene_data: SceneData, config: JobConfiguration) -> JobHandle {
+    pub fn schedule_job(&mut self, scene_data: &SceneData, config: JobConfiguration) -> JobHandle {
         let id = self.job_id_allocator.next_id();
         let (s, r): (Sender<()>, Receiver<()>) = unbounded();
         let j = Job {
-            scene_data,
+            scene_data: scene_data.clone(),
             config,
             id,
         };
