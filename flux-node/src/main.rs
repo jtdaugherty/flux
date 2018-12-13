@@ -61,11 +61,13 @@ fn handle_client(stream: TcpStream, worker: &WorkerHandle) -> io::Result<()> {
                         wu_send.send(Some(u)).unwrap();
                     },
                     NetworkWorkerRequest::Done => {
+                        println!("Got done message, sending to worker");
                         wu_send.send(None).unwrap();
                     }
                 }
             },
             Err(err) => {
+                wu_send.send(None).unwrap();
                 return Err(io::Error::new(io::ErrorKind::Other, format!("{}", err)));
             }
         }
