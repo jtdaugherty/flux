@@ -15,17 +15,22 @@ pub struct CameraSettings {
     pub eye: Point3<f64>,
     pub look_at: Point3<f64>,
     pub up: Vector3<f64>,
+}
+
+#[derive(Clone)]
+#[derive(Debug)]
+pub struct CameraBasis {
     pub u: Vector3<f64>,
     pub v: Vector3<f64>,
     pub w: Vector3<f64>,
 }
 
-impl CameraSettings {
-    pub fn new(eye: Point3<f64>, look_at: Point3<f64>, up: Vector3<f64>) -> CameraSettings {
-        let w = (eye - look_at).normalize();
-        let u = up.cross(&w).normalize();
+impl CameraBasis {
+    pub fn new(s: &CameraSettings) -> CameraBasis {
+        let w = (s.eye - s.look_at).normalize();
+        let u = s.up.cross(&w).normalize();
         let v = w.cross(&u);
-        CameraSettings { eye, look_at, up, u, v, w }
+        CameraBasis { u, v, w }
     }
 }
 
@@ -74,6 +79,7 @@ pub struct Scene {
     pub background: Color,
     pub shapes: Vec<Box<Intersectable>>,
     pub camera_settings: CameraSettings,
+    pub camera_basis: CameraBasis,
     pub camera_data: CameraData,
     pub job_config: JobConfiguration,
 }
@@ -140,6 +146,7 @@ impl Scene {
             background: sd.background,
             scene_name: sd.scene_name,
             shapes,
+            camera_basis: CameraBasis::new(&sd.camera_settings),
             camera_settings: sd.camera_settings,
             camera_data: sd.camera_data,
             job_config: config,

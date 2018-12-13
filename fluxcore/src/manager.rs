@@ -294,6 +294,7 @@ impl LocalWorker {
 
                 let scene = Scene::from_data(job.scene_data, job.config);
                 let camera = Camera::new(scene.camera_settings.clone(),
+                                         scene.camera_basis.clone(),
                                          job.config,
                                          scene.output_settings.image_width,
                                          scene.camera_data.zoom_factor,

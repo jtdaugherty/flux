@@ -6,13 +6,14 @@ use samplers::Sampler;
 
 use crate::sampling::MasterSampleSets;
 use crate::color::Color;
-use crate::scene::{Scene, CameraSettings};
+use crate::scene::{Scene, CameraSettings, CameraBasis};
 use crate::common::Ray;
 use crate::manager::WorkUnitResult;
 use crate::job::{JobConfiguration, WorkUnit};
 
 pub struct Camera {
     pub settings: CameraSettings,
+    pub basis: CameraBasis,
     samples: MasterSampleSets,
     config: JobConfiguration,
     pub zoom_factor: f64,
@@ -22,13 +23,14 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(settings: CameraSettings, config: JobConfiguration, num_sets: usize,
+    pub fn new(settings: CameraSettings, basis: CameraBasis, config: JobConfiguration, num_sets: usize,
                zoom_factor: f64, view_plane_distance: f64, focal_distance: f64,
                lens_radius: f64) -> Camera {
         let mut s = Sampler::new();
 
         Camera {
             settings,
+            basis,
             config,
             zoom_factor,
             view_plane_distance,
@@ -43,9 +45,9 @@ impl Camera {
         let factor = self.focal_distance / self.view_plane_distance;
         let px2 = px * factor;
         let py2 = py * factor;
-        ((px2 - lx) * self.settings.u +
-            (py2 - ly) * self.settings.v -
-            self.focal_distance * self.settings.w).normalize()
+        ((px2 - lx) * self.basis.u +
+            (py2 - ly) * self.basis.v -
+            self.focal_distance * self.basis.w).normalize()
     }
 
     pub fn render(&self, s: &Scene, work: WorkUnit) -> WorkUnitResult {
@@ -74,7 +76,7 @@ impl Camera {
                     let lpy = lens_sample.y * self.lens_radius;
                     let r = Ray {
                         direction: self.ray_direction(u, v, lpx, lpy),
-                        origin: self.settings.eye + lpx * self.settings.u + lpy * self.settings.v,
+                        origin: self.settings.eye + lpx * self.basis.u + lpy * self.basis.v,
                     };
 
                     color += s.shade(&r, 1, &self.samples, sample_set_indexes[col], index);

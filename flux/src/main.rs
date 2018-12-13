@@ -42,10 +42,11 @@ fn main() {
             image_height: 600,
             pixel_size: 0.5,
         },
-        camera_settings: CameraSettings::new(
-                             Point3::new(2.5, 1.5, -9.0),
-                             Point3::new(2.5, 1.0, 0.0),
-                             Vector3::new(0.0, 1.0, 0.0)),
+        camera_settings: CameraSettings {
+            eye: Point3::new(2.5, 1.5, -9.0),
+            look_at: Point3::new(2.5, 1.0, 0.0),
+            up: Vector3::new(0.0, 1.0, 0.0),
+        },
         camera_data: CameraData {
             zoom_factor: 1.0,
             view_plane_distance: 500.0,
