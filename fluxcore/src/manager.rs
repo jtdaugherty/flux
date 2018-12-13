@@ -88,7 +88,7 @@ impl RenderManager {
 
         let (s, r): (Sender<Option<(Job, Sender<()>)>>, Receiver<Option<(Job, Sender<()>)>>) = unbounded();
 
-        let handle = thread::spawn(move || {
+        let handle = thread::Builder::new().name("RenderManager".to_string()).spawn(move || {
             d_println(format!("Render manager: awaiting job"));
 
             while let Ok(Some((job, notify_done))) = r.recv() {
@@ -136,7 +136,7 @@ impl RenderManager {
             }
 
             d_println(format!("Render manager: shutting down"));
-        });
+        }).unwrap();
 
         RenderManager {
             job_id_allocator: JobIDAllocator::new(),
@@ -178,11 +178,12 @@ pub struct NetworkWorker {
 impl NetworkWorker {
     pub fn new(host: &str, port: &str) -> NetworkWorker {
         let addr = format!("{}:{}", host, port);
+        let tname = format!("NetworkWorker({})", addr);
         let stream = TcpStream::connect(addr).unwrap();
 
         let (s, r): (Sender<WorkerRequest>, Receiver<WorkerRequest>) = unbounded();
 
-        let handle = thread::spawn(move || {
+        let handle = thread::Builder::new().name(tname).spawn(move || {
             let mut my_stream = stream;
             let stream_clone = my_stream.try_clone().unwrap();
             let mut stream_de: StreamDeserializer<'_, IoRead<TcpStream>, RenderEvent> =
@@ -251,7 +252,7 @@ impl NetworkWorker {
             }
 
             d_println(format!("Network worker shutting down"));
-        });
+        }).unwrap();
 
         NetworkWorker {
             sender: s,
@@ -282,7 +283,7 @@ impl LocalWorker {
     pub fn new() -> LocalWorker {
         let (s, r): (Sender<WorkerRequest>, Receiver<WorkerRequest>) = unbounded();
 
-        let handle = thread::spawn(move || {
+        let handle = thread::Builder::new().name("LocalWorker".to_string()).spawn(move || {
             while let Ok(Some((job, recv_unit, send_result, wg))) = r.recv() {
                 d_println(format!("Local worker: got job {:?}", job.id));
 
@@ -311,7 +312,7 @@ impl LocalWorker {
             }
 
             d_println(format!("Local worker shutting down"));
-        });
+        }).unwrap();
 
         LocalWorker {
             sender: s,
@@ -341,7 +342,7 @@ impl ConsoleResultReporter {
     pub fn new() -> ConsoleResultReporter {
         let (s, r): (Sender<Option<RenderEvent>>, Receiver<Option<RenderEvent>>) = unbounded();
 
-        thread::spawn(move || {
+        thread::Builder::new().name("ConsoleResultReporter".to_string()).spawn(move || {
             while let Ok(Some(result)) = r.recv() {
                 match result {
                     RenderEvent::RenderingStarted { job_id, start_time, } => {
@@ -361,7 +362,7 @@ impl ConsoleResultReporter {
                     }
                 }
             }
-        });
+        }).unwrap();
 
         ConsoleResultReporter {
             sender: s,
@@ -385,7 +386,7 @@ impl ImageBuilder {
         let img_ref = Arc::new(Mutex::new(None));
         let img_ref_thread = img_ref.clone();
 
-        let thread_handle = thread::spawn(move || {
+        let thread_handle = thread::Builder::new().name("ImageBuilder".to_string()).spawn(move || {
             let (scene_name, width, height) = match r.recv() {
                 Ok(Some(RenderEvent::ImageInfo { scene_name, width, height } )) => (scene_name, width, height),
                 _ => panic!("ImageBuilder: got unexpected message"),
@@ -428,7 +429,7 @@ impl ImageBuilder {
                     _ => panic!("ImageBuilder: got unexpected message"),
                 }
             }
-        });
+        }).unwrap();
 
         ImageBuilder {
             sender: s,
