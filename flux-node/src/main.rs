@@ -71,6 +71,8 @@ fn handle_client(stream: TcpStream, worker: &WorkerHandle) -> io::Result<()> {
         }
     }
 
+    drop(re_send);
+
     t_handle.join().unwrap();
 
     Ok(())
