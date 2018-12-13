@@ -1,5 +1,5 @@
 
-use crossbeam::channel::{Sender, Receiver, unbounded};
+use crossbeam::channel::{Sender, Receiver, bounded, unbounded};
 use crossbeam::sync::WaitGroup;
 use crossbeam::SendError;
 use std::fs::File;
@@ -48,7 +48,7 @@ pub struct WorkUnitResult {
 
 pub struct RenderManager {
     job_id_allocator: JobIDAllocator,
-    job_queue: Sender<Option<(Job, Sender<()>)>>,
+    job_queue: Sender<Option<(Job, Sender<()>, Receiver<()>)>>,
     thread_handle: thread::JoinHandle<()>,
 }
 
@@ -59,25 +59,32 @@ pub enum NetworkWorkerRequest {
     Done,
 }
 
-type WorkerRequest = Option<(Box<Job>, Receiver<Option<WorkUnit>>, Sender<Option<RenderEvent>>, WaitGroup)>;
+type WorkerRequest = Option<(Box<Job>, Receiver<WorkUnit>, Sender<Option<RenderEvent>>, WaitGroup)>;
 
 pub struct WorkerHandle {
     sender: Sender<WorkerRequest>,
 }
 
 impl WorkerHandle {
-    pub fn send(&self, j: Box<Job>, r: Receiver<Option<WorkUnit>>, s: Sender<Option<RenderEvent>>, wg: WaitGroup) -> Result<(), SendError<WorkerRequest>> {
+    pub fn send(&self, j: Box<Job>, r: Receiver<WorkUnit>, s: Sender<Option<RenderEvent>>, wg: WaitGroup) -> Result<(), SendError<WorkerRequest>> {
         self.sender.send(Some((j, r, s, wg)))
     }
 }
 
 pub struct JobHandle {
+    job_id: JobID,
     waiter: Receiver<()>,
+    canceller: Sender<()>,
 }
 
 impl JobHandle {
     pub fn wait(&self) {
         self.waiter.recv().unwrap()
+    }
+
+    pub fn cancel(&self) {
+        d_println(format!("Job cancellation request for {:?}", self.job_id));
+        self.canceller.send(()).unwrap();
     }
 }
 
@@ -87,12 +94,12 @@ impl RenderManager {
             panic!("RenderManager::new: must provide at least one worker handle");
         }
 
-        let (s, r): (Sender<Option<(Job, Sender<()>)>>, Receiver<Option<(Job, Sender<()>)>>) = unbounded();
+        let (s, r): (Sender<Option<(Job, Sender<()>, Receiver<()>)>>, Receiver<Option<(Job, Sender<()>, Receiver<()>)>>) = unbounded();
 
         let handle = thread::Builder::new().name("RenderManager".to_string()).spawn(move || {
             d_println(format!("Render manager: awaiting job"));
 
-            while let Ok(Some((job, notify_done))) = r.recv() {
+            while let Ok(Some((job, notify_done, notify_cancel))) = r.recv() {
                 d_println(format!("Render manager: got job {:?}", job.id));
 
                 let info_event = RenderEvent::ImageInfo {
@@ -102,12 +109,36 @@ impl RenderManager {
                 };
                 result_sender.send(Some(info_event)).unwrap();
 
-                let (ws, wr) = unbounded();
+                let (ws, wr) = bounded(1);
                 let wg = WaitGroup::new();
+                let units = job.work_units().into_iter();
+                let wu_queue = Arc::new(Mutex::new(CancellableIterator::new(units)));
 
-                for u in job.work_units() {
-                    ws.send(Some(u)).unwrap();
-                }
+                let wu_queue_cancel = Arc::clone(&wu_queue);
+                thread::Builder::new().name(format!("Cancel listener for {:?}", job.id)).spawn(move || {
+                    d_println(format!("Cancel listener waiting for cancel message"));
+                    notify_cancel.recv().unwrap();
+                    d_println(format!("Cancel listener got cancellation"));
+                    wu_queue_cancel.lock().unwrap().cancel();
+                }).unwrap();
+
+                let wu_queue_read = Arc::clone(&wu_queue);
+                thread::Builder::new().name(format!("Work queue for {:?}", job.id)).spawn(move || {
+                    d_println(format!("Work queue producer starting"));
+                    loop {
+                        let mut q = wu_queue_read.lock().unwrap();
+                        match q.next() {
+                            None => {
+                                d_println(format!("Work unit iterator cancelled or empty, quitting"));
+                                return;
+                            },
+                            Some(i) => {
+                                d_println(format!("Work item ready, adding to queue"));
+                                ws.send(i.clone()).unwrap();
+                            }
+                        }
+                    }
+                }).unwrap();
 
                 d_println(format!("Render manager: work queue ready, sending job to workers"));
 
@@ -116,16 +147,15 @@ impl RenderManager {
                 result_sender.send(Some(start_event)).unwrap();
 
                 workers.iter().for_each(|worker| {
-                    ws.send(None).unwrap();
                     let job_boxed = Box::new(job.clone());
                     worker.send(job_boxed, wr.clone(), result_sender.clone(), wg.clone()).unwrap();
                 });
 
-                d_println(format!("Render manager: waiting for job completion"));
+                d_println(format!("Render manager: waiting for job completion or cancellation"));
 
                 wg.wait();
 
-                d_println(format!("Render manager: job complete"));
+                d_println(format!("Render manager: all workers done"));
 
                 let end_time = SystemTime::now();
                 result_sender.send(Some(RenderEvent::RenderingFinished { end_time, })).unwrap();
@@ -149,14 +179,17 @@ impl RenderManager {
     pub fn schedule_job(&mut self, scene_data: &SceneData, config: JobConfiguration) -> JobHandle {
         let id = self.job_id_allocator.next_id();
         let (s, r): (Sender<()>, Receiver<()>) = unbounded();
+        let (cs, cr): (Sender<()>, Receiver<()>) = unbounded();
         let j = Job {
             scene_data: scene_data.clone(),
             config,
             id,
         };
-        self.job_queue.send(Some((j, s))).unwrap();
+        self.job_queue.send(Some((j, s, cr))).unwrap();
         JobHandle {
-            waiter: r
+            job_id: id,
+            waiter: r,
+            canceller: cs,
         }
     }
 
@@ -204,11 +237,11 @@ impl NetworkWorker {
                 let buf = 2;
 
                 for _ in 0..buf {
-                    let unit = recv_unit.recv().unwrap().unwrap();
+                    let unit = recv_unit.recv().unwrap();
                     to_writer(&mut my_stream, &NetworkWorkerRequest::WorkUnit(unit)).unwrap();
                 }
 
-                while let Ok(Some(unit)) = recv_unit.recv() {
+                while let Ok(unit) = recv_unit.recv() {
                     d_println(format!("Network worker: got work unit {:?}", unit));
 
                     to_writer(&mut my_stream, &NetworkWorkerRequest::WorkUnit(unit)).unwrap();
@@ -302,7 +335,7 @@ impl LocalWorker {
                                          scene.camera_data.focal_distance,
                                          scene.camera_data.lens_radius);
 
-                while let Ok(Some(unit)) = recv_unit.recv() {
+                while let Ok(unit) = recv_unit.recv() {
                     d_println(format!("Local worker: got work unit {:?}", unit));
 
                     d_println(format!("Starting render"));
@@ -460,5 +493,35 @@ impl ImageBuilder {
     pub fn stop(self) {
         self.sender.send(None).unwrap();
         self.thread_handle.join().unwrap();
+    }
+}
+
+struct CancellableIterator<T: Iterator> {
+    items: T,
+    cancelled: bool,
+}
+
+impl<T: Iterator> CancellableIterator<T> {
+    pub fn new(items: T) -> CancellableIterator<T> {
+        CancellableIterator {
+            items,
+            cancelled: false,
+        }
+    }
+
+    pub fn cancel(&mut self) {
+        self.cancelled = true;
+    }
+}
+
+impl<T: Iterator> Iterator for CancellableIterator<T> {
+    type Item = T::Item;
+
+    fn next(&mut self) -> Option<T::Item> {
+        if self.cancelled {
+            None
+        } else {
+            self.items.next()
+        }
     }
 }

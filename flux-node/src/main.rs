@@ -30,7 +30,7 @@ fn handle_client(stream: TcpStream, worker: &WorkerHandle) -> io::Result<()> {
     let stream_de: StreamDeserializer<'_, IoRead<TcpStream>, NetworkWorkerRequest> =
         StreamDeserializer::new(IoRead::new(stream));
 
-    let (wu_send, wu_recv): (Sender<Option<WorkUnit>>, Receiver<Option<WorkUnit>>) = unbounded();
+    let (wu_send, wu_recv): (Sender<WorkUnit>, Receiver<WorkUnit>) = unbounded();
     let (re_send, re_recv): (Sender<Option<RenderEvent>>, Receiver<Option<RenderEvent>>) = unbounded();
     let wg = WaitGroup::new();
 
@@ -68,16 +68,15 @@ fn handle_client(stream: TcpStream, worker: &WorkerHandle) -> io::Result<()> {
                     },
                     NetworkWorkerRequest::WorkUnit(u) => {
                         println!("Got work unit, sending to worker");
-                        wu_send.send(Some(u)).unwrap();
+                        wu_send.send(u).unwrap();
                     },
                     NetworkWorkerRequest::Done => {
-                        println!("Got done message, sending to worker");
-                        wu_send.send(None).unwrap();
+                        println!("Got done message, shutting down");
+                        return Ok(())
                     }
                 }
             },
             Err(err) => {
-                wu_send.send(None).unwrap();
                 return Err(io::Error::new(io::ErrorKind::Other, format!("{}", err)));
             }
         }

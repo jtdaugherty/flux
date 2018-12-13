@@ -150,6 +150,7 @@ fn main() {
                 match event {
                     Event::Quit {..} |
                         Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
+                            job.cancel();
                             break 'running
                         },
                     _ => {}
