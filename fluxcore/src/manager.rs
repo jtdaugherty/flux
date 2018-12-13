@@ -244,6 +244,8 @@ impl NetworkWorker {
                     }
                 }
 
+                to_writer(&mut my_stream, &NetworkWorkerRequest::Done).unwrap();
+
                 d_println(format!("Network worker finished job"));
                 drop(wg);
             }
