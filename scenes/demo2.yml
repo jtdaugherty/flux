@@ -1,13 +1,29 @@
+mat1: &mat1
+  GlossyReflective:
+    reflect_amount: 0.5
+    reflect_color: [0.8, 0.6, 1.0]
+    reflect_exponent: 10000.0
+mat2: &mat2
+  GlossyReflective:
+    reflect_amount: 0.5
+    reflect_color: [0.9, 1.0, 0.7]
+    reflect_exponent: 100.0
+mat3: &mat3
+  GlossyReflective:
+    reflect_amount: 0.5
+    reflect_color: [1, 0.9, 0.9]
+    reflect_exponent: 10.0
+
 scene_name: demo2
 camera_settings:
-  eye: [0, 1.5, -9.0]
+  eye: [0, 5.5, -9.0]
   look_at: [0, 1, 0]
   up: [0, 1, 0]
 camera_data:
   zoom_factor: 1.0
   view_plane_distance: 500.0
-  focal_distance: 13.0
-  lens_radius: 0.2
+  focal_distance: 10.0
+  lens_radius: 0.09
 output_settings:
   image_width: 800
   image_height: 600
@@ -21,98 +37,66 @@ shapes:
       material:
         Emissive:
           color: [1, 0.9686, 0.8588]
-          power: 1.0
+          power: 0.3
       invert: true
-  # Line of spheres
+  # Area light
+  - Sphere:
+      center: [-9.0, 7.0, 8.0]
+      radius: 5.0
+      material:
+        Emissive:
+          color: [1, 0.9686, 0.8588]
+          power: 10.0
+      invert: false
   - Sphere:
       center: [-2.0, 1.0, -4.0]
       radius: 1.0
-      material:
-        Matte:
-          diffuse_color: [0.0, 0.7, 0.6]
-          ambient_color: [1.0, 1.0, 1.0]
-          diffuse_coefficient: 1.0
+      material: *mat1
       invert: false
   - Sphere:
       center: [-1.0, 1.0, -2.0]
       radius: 1.0
-      material:
-        Matte:
-          diffuse_color: [0.0, 0.7, 0.6]
-          ambient_color: [1.0, 1.0, 1.0]
-          diffuse_coefficient: 1.0
+      material: *mat2
       invert: false
   - Sphere:
       center: [0.0, 1.0, 0.0]
       radius: 1.0
-      material:
-        Matte:
-          diffuse_color: [0.0, 0.7, 0.6]
-          ambient_color: [1.0, 1.0, 1.0]
-          diffuse_coefficient: 1.0
+      material: *mat3
       invert: false
   - Sphere:
       center: [1.0, 1.0, 2.0]
       radius: 1.0
-      material:
-        Matte:
-          diffuse_color: [0.0, 0.7, 0.6]
-          ambient_color: [1.0, 1.0, 1.0]
-          diffuse_coefficient: 1.0
+      material: *mat1
       invert: false
   - Sphere:
       center: [2.0, 1.0, 4.0]
       radius: 1.0
-      material:
-        Matte:
-          diffuse_color: [0.0, 0.7, 0.6]
-          ambient_color: [1.0, 1.0, 1.0]
-          diffuse_coefficient: 1.0
+      material: *mat2
       invert: false
   - Sphere:
       center: [3.0, 1.0, 6.0]
       radius: 1.0
-      material:
-        Matte:
-          diffuse_color: [0.0, 0.7, 0.6]
-          ambient_color: [1.0, 1.0, 1.0]
-          diffuse_coefficient: 1.0
+      material: *mat3
       invert: false
   - Sphere:
       center: [4.0, 1.0, 8.0]
       radius: 1.0
-      material:
-        Matte:
-          diffuse_color: [0.0, 0.7, 0.6]
-          ambient_color: [1.0, 1.0, 1.0]
-          diffuse_coefficient: 1.0
+      material: *mat1
       invert: false
   - Sphere:
       center: [5.0, 1.0, 10.0]
       radius: 1.0
-      material:
-        Matte:
-          diffuse_color: [0.0, 0.7, 0.6]
-          ambient_color: [1.0, 1.0, 1.0]
-          diffuse_coefficient: 1.0
+      material: *mat2
       invert: false
   - Sphere:
       center: [6.0, 1.0, 12.0]
       radius: 1.0
-      material:
-        Matte:
-          diffuse_color: [0.0, 0.7, 0.6]
-          ambient_color: [1.0, 1.0, 1.0]
-          diffuse_coefficient: 1.0
+      material: *mat3
       invert: false
   - Sphere:
       center: [7.0, 1.0, 14.0]
       radius: 1.0
-      material:
-        Matte:
-          diffuse_color: [0.0, 0.7, 0.6]
-          ambient_color: [1.0, 1.0, 1.0]
-          diffuse_coefficient: 1.0
+      material: *mat1
       invert: false
   - Plane:
       point: [0, 0, 0]
