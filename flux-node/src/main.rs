@@ -2,11 +2,13 @@
 extern crate fluxcore;
 extern crate serde_cbor;
 extern crate crossbeam;
+extern crate clap;
 
 use crossbeam::channel::{Sender, Receiver, unbounded};
 use crossbeam::sync::WaitGroup;
 
 use fluxcore::job::*;
+use fluxcore::constants::DEFAULT_PORT;
 use fluxcore::manager::{Worker, LocalWorker, NetworkWorkerRequest, RenderEvent, WorkerHandle};
 
 use serde_cbor::StreamDeserializer;
@@ -16,6 +18,8 @@ use serde_cbor::to_writer;
 use std::net::{TcpListener, TcpStream};
 use std::thread;
 use std::io;
+
+use clap::{Arg, App};
 
 fn handle_client(stream: TcpStream, worker: &WorkerHandle) -> io::Result<()> {
     let peer = stream.peer_addr()?;
@@ -97,10 +101,40 @@ fn run_server(bind_address: String, worker: &LocalWorker) -> io::Result<()> {
     Ok(())
 }
 
+struct Config {
+    pub listen_host: String,
+    pub listen_port: String,
+}
+
+fn config_from_args() -> Config {
+    let app = App::new("flux-node")
+        .author("Jonathan Daugherty <cygnus@foobox.com>")
+        .about("Network rendering server for the flux ray tracer")
+        .arg(Arg::with_name("host")
+             .short("h")
+             .long("host")
+             .value_name("ADDRESS")
+             .help("Listen for requests on this address")
+             .takes_value(true))
+        .arg(Arg::with_name("port")
+             .short("p")
+             .long("port")
+             .help("Listen on this TCP port")
+             .takes_value(true));
+
+    let ms = app.get_matches();
+    let default_host = "0.0.0.0";
+    let default_port = DEFAULT_PORT;
+
+    Config {
+        listen_host: ms.value_of("host").unwrap_or(default_host).to_string(),
+        listen_port: ms.value_of("port").unwrap_or(default_port).to_string(),
+    }
+}
+
 fn main() -> io::Result<()> {
-    let listen_host = "0.0.0.0";
-    let listen_port = "2000";
-    let bind_address = format!("{}:{}", listen_host, listen_port);
+    let config = config_from_args();
+    let bind_address = format!("{}:{}", config.listen_host, config.listen_port);
 
     println!("Bind address: {}", bind_address);
 
