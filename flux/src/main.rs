@@ -29,8 +29,6 @@ const DEFAULT_DEPTH: usize = 5;
 fn main() {
     let config = config_from_args();
 
-    println!("{:?}", config);
-
     let c = JobConfiguration {
         rows_per_work_unit: config.rows_per_work_unit,
         max_trace_depth: config.max_depth,
