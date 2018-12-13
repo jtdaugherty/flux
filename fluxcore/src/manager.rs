@@ -310,7 +310,12 @@ impl LocalWorker {
                     d_println(format!("render done"));
 
                     let ev = RenderEvent::RowsReady(r);
-                    send_result.send(Some(ev)).unwrap();
+                    match send_result.send(Some(ev)) {
+                        Ok(()) => (),
+                        Err(_) => {
+                            return;
+                        }
+                    }
                 }
 
                 d_println(format!("Local worker finished job"));
