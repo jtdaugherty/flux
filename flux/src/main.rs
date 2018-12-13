@@ -3,6 +3,7 @@ extern crate fluxcore;
 extern crate nalgebra;
 extern crate sdl2;
 extern crate clap;
+extern crate serde_yaml;
 
 use std::time::Duration;
 use std::str::FromStr;
@@ -12,16 +13,13 @@ use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::image::{INIT_PNG, INIT_JPG};
 
-use nalgebra::{Point3, Vector3};
-
 use fluxcore::manager::*;
-use fluxcore::constants::DEFAULT_PORT;
 use fluxcore::job::JobConfiguration;
 use fluxcore::scene::*;
-use fluxcore::shapes::*;
-use fluxcore::color::Color;
 
 use clap::{App, Arg};
+
+use std::fs::File;
 
 const DEFAULT_SAMPLE_ROOT: usize = 1;
 const DEFAULT_DEPTH: usize = 5;
@@ -35,87 +33,8 @@ fn main() {
         sample_root: config.sample_root,
     };
 
-    let s = SceneData {
-        scene_name: String::from("test_scene"),
-        output_settings: OutputSettings {
-            image_width: 800,
-            image_height: 600,
-            pixel_size: 0.5,
-        },
-        camera_settings: CameraSettings {
-            eye: Point3::new(2.5, 1.5, -9.0),
-            look_at: Point3::new(2.5, 1.0, 0.0),
-            up: Vector3::new(0.0, 1.0, 0.0),
-        },
-        camera_data: CameraData {
-            zoom_factor: 1.0,
-            view_plane_distance: 500.0,
-            focal_distance: 10.0,
-            lens_radius: 0.0,
-        },
-        background: Color::all(0.0),
-        shapes: vec![
-            // Environment light
-            ShapeData::Sphere(SphereData {
-                center: Point3::new(0.0, 0.0, 0.0),
-                radius: 100.0,
-                invert: true,
-                material: MaterialData::Emissive(EmissiveData {
-                    color: Color::new(1.0, 0.9686, 0.8588),
-                    power: 1.0,
-                })
-            }),
-            ShapeData::Sphere(SphereData {
-                center: Point3::new(0.0, 1.0, 0.0),
-                radius: 1.0,
-                invert: false,
-                material: MaterialData::Matte(MatteData {
-                    diffuse_coefficient: 1.0,
-                    ambient_color: Color::white(),
-                    diffuse_color: Color::new(0.0, 0.7, 0.6),
-                })
-            }),
-            ShapeData::Sphere(SphereData {
-                center: Point3::new(2.0, 1.0, 2.0),
-                radius: 1.0,
-                invert: false,
-                material: MaterialData::GlossyReflective(GlossyReflectiveData {
-                    reflect_amount: 0.9,
-                    reflect_color: Color::new(0.9, 1.0, 0.9),
-                    reflect_exponent: 100.0,
-                })
-            }),
-            ShapeData::Sphere(SphereData {
-                center: Point3::new(4.0, 1.0, 4.0),
-                radius: 1.0,
-                invert: false,
-                material: MaterialData::GlossyReflective(GlossyReflectiveData {
-                    reflect_amount: 0.9,
-                    reflect_color: Color::new(0.9, 1.0, 0.9),
-                    reflect_exponent: 100_000.0,
-                })
-            }),
-            ShapeData::Sphere(SphereData {
-                center: Point3::new(6.0, 1.0, 2.0),
-                radius: 1.0,
-                invert: false,
-                material: MaterialData::Matte(MatteData {
-                    diffuse_coefficient: 1.0,
-                    ambient_color: Color::white(),
-                    diffuse_color: Color::new(0.5, 0.3, 0.8),
-                })
-            }),
-            ShapeData::Plane(PlaneData {
-                point: Point3::new(0.0, 0.0, 0.0),
-                normal: Vector3::new(0.0, 1.0, 0.0),
-                material: MaterialData::Matte(MatteData {
-                    diffuse_coefficient: 1.0,
-                    ambient_color: Color::white(),
-                    diffuse_color: Color::all(0.5),
-                })
-            }),
-        ],
-    };
+    let scene_file = File::open(config.input_filename).unwrap();
+    let s: SceneData = serde_yaml::from_reader(scene_file).unwrap();
 
     // Set up workers ////////////////////////////////////////////////////////
 
@@ -253,12 +172,16 @@ struct Config {
     sample_root: usize,
     max_depth: usize,
     rows_per_work_unit: usize,
+    input_filename: String,
 }
 
 fn config_from_args() -> Config {
     let app = App::new("flux")
         .author("Jonathan Daugherty <cygnus@foobox.com>")
         .about("Flux ray tracer")
+        .arg(Arg::with_name("scene_file")
+             .index(1)
+             .required(true))
         .arg(Arg::with_name("network_worker")
              .short("n")
              .long("node")
@@ -288,10 +211,13 @@ fn config_from_args() -> Config {
              .takes_value(true));
 
     let ms = app.get_matches();
-    let default_port = DEFAULT_PORT;
     let default_rows_per_work_unit = 50;
 
     Config {
+        input_filename: match ms.value_of("scene_file") {
+            None => panic!("Scene filename is required"),
+            Some(f) => String::from(f),
+        },
         sample_root: match ms.value_of("sample_root") {
             None => DEFAULT_SAMPLE_ROOT,
             Some(r) => usize::from_str(r).unwrap(),
