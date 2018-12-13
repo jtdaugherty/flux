@@ -137,9 +137,7 @@ fn main() {
 
     for endpoint in config.network_workers {
         println!("Connecting to network worker");
-        let host = "192.168.50.16";
-        let port = "2000";
-        let worker = NetworkWorker::new(host, port);
+        let worker = NetworkWorker::new(&endpoint);
         worker_handles.push(worker.handle());
         net_workers.push(worker);
     }
@@ -299,6 +297,9 @@ fn config_from_args() -> Config {
             0 => true,
             _ => false,
         },
-        network_workers: vec![],
+        network_workers: match ms.values_of("network_worker") {
+            None => vec![],
+            Some(v) => v.map(|s| String::from(s)).collect(),
+        }
     }
 }

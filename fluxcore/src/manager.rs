@@ -176,10 +176,9 @@ pub struct NetworkWorker {
 }
 
 impl NetworkWorker {
-    pub fn new(host: &str, port: &str) -> NetworkWorker {
-        let addr = format!("{}:{}", host, port);
-        let tname = format!("NetworkWorker({})", addr);
-        let stream = TcpStream::connect(addr).unwrap();
+    pub fn new(endpoint: &String) -> NetworkWorker {
+        let tname = format!("NetworkWorker({})", endpoint);
+        let stream = TcpStream::connect(endpoint.as_str()).unwrap();
 
         let (s, r): (Sender<WorkerRequest>, Receiver<WorkerRequest>) = unbounded();
 
