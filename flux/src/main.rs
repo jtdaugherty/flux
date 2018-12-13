@@ -2,8 +2,10 @@
 extern crate fluxcore;
 extern crate nalgebra;
 extern crate sdl2;
+extern crate clap;
 
 use std::time::Duration;
+use std::str::FromStr;
 
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::event::Event;
@@ -13,17 +15,28 @@ use sdl2::image::{INIT_PNG, INIT_JPG};
 use nalgebra::{Point3, Vector3};
 
 use fluxcore::manager::*;
+use fluxcore::constants::DEFAULT_PORT;
 use fluxcore::job::JobConfiguration;
 use fluxcore::scene::*;
 use fluxcore::shapes::*;
 use fluxcore::color::Color;
 
+use clap::{App, Arg};
+
+const DEFAULT_SAMPLE_ROOT: usize = 1;
+const DEFAULT_DEPTH: usize = 5;
+
 fn main() {
+    let config = config_from_args();
+
+    println!("{:?}", config);
+
     let c = JobConfiguration {
-        rows_per_work_unit: 10,
-        max_trace_depth: 10,
-        sample_root: 32,
+        rows_per_work_unit: 50,
+        max_trace_depth: config.max_depth,
+        sample_root: config.sample_root,
     };
+
     let s = SceneData {
         scene_name: String::from("test_scene"),
         output_settings: OutputSettings {
@@ -105,6 +118,31 @@ fn main() {
         ],
     };
 
+    // Set up workers ////////////////////////////////////////////////////////
+
+    if !config.use_local_worker && config.network_workers.is_empty() {
+        println!("No workers specified, exiting");
+        return;
+    }
+
+    let mut workers: Vec<Box<Worker>> = vec![];
+    let mut worker_handles: Vec<WorkerHandle> = vec![];
+
+    if config.use_local_worker {
+        let worker = LocalWorker::new();
+        worker_handles.push(worker.handle());
+        workers.push(Box::new(worker));
+    }
+
+    for endpoint in config.network_workers {
+        println!("Connecting to network worker");
+        let host = "192.168.50.16";
+        let port = "2000";
+        let worker = NetworkWorker::new(host, port);
+        worker_handles.push(worker.handle());
+        workers.push(Box::new(worker));
+    }
+
     // SDL setup /////////////////////////////////////////////////////////////
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
@@ -129,22 +167,17 @@ fn main() {
 
     let mut event_pump = sdl_context.event_pump().unwrap();
 
-    //////////////////////////////////////////////////////////////////////////
-
-    let local_worker = LocalWorker::new();
-
-    println!("Connecting to network worker");
-    let host = "192.168.50.16";
-    let port = "2000";
-    let network_worker = NetworkWorker::new(host, port);
+    // Set up manager ////////////////////////////////////////////////////////
 
     let image_builder = ImageBuilder::new();
 
     println!("Starting rendering manager");
-    let mut manager = RenderManager::new(vec![local_worker.handle(), network_worker.handle()], image_builder.sender());
+    let mut manager = RenderManager::new(worker_handles, image_builder.sender());
 
     println!("Sending job to rendering manager");
     manager.schedule_job(s, c);
+
+    // Set up GUI ////////////////////////////////////////////////////////////
 
     let mut copied_rows: Vec<bool> = (0..image_height).map(|_| false).collect();
     let mut finished = false;
@@ -202,8 +235,63 @@ fn main() {
     }
 
     println!("Shutting down");
-    manager.stop();
-    local_worker.stop();
-    network_worker.stop();
-    image_builder.stop();
+    // manager.stop();
+
+    // drop(workers);
+
+    // image_builder.stop();
+}
+
+#[derive(Debug)]
+struct Config {
+    network_workers: Vec<String>,
+    use_local_worker: bool,
+    sample_root: usize,
+    max_depth: usize,
+}
+
+fn config_from_args() -> Config {
+    let app = App::new("flux")
+        .author("Jonathan Daugherty <cygnus@foobox.com>")
+        .about("Flux ray tracer")
+        .arg(Arg::with_name("network_worker")
+             .short("n")
+             .long("node")
+             .value_name("ADDRESS[:PORT]")
+             .help("Render using the specified flux-node process at this address")
+             .takes_value(true))
+        .arg(Arg::with_name("depth")
+             .short("d")
+             .long("depth")
+             .value_name("DEPTH")
+             .help("Tracing depth")
+             .takes_value(true))
+        .arg(Arg::with_name("skip_local")
+             .short("L")
+             .help("Do not use the local host for rendering")
+             .takes_value(false))
+        .arg(Arg::with_name("sample_root")
+             .short("r")
+             .long("root")
+             .help("Sample root")
+             .takes_value(true));
+
+    let ms = app.get_matches();
+    let default_port = DEFAULT_PORT;
+
+    Config {
+        sample_root: match ms.value_of("sample_root") {
+            None => DEFAULT_SAMPLE_ROOT,
+            Some(r) => usize::from_str(r).unwrap(),
+        },
+        max_depth: match ms.value_of("depth") {
+            None => DEFAULT_DEPTH,
+            Some(d) => usize::from_str(d).unwrap(),
+        },
+        use_local_worker: match ms.occurrences_of("skip_local") {
+            0 => true,
+            _ => false,
+        },
+        network_workers: vec![],
+    }
 }
