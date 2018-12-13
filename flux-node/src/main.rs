@@ -39,7 +39,13 @@ fn handle_client(stream: TcpStream, worker: &WorkerHandle) -> io::Result<()> {
         println!("Work unit result thread started");
         while let Ok(Some(ev)) = re_recv.recv() {
             println!("Got results from local worker, sending to manager");
-            to_writer(&mut my_stream, &ev).unwrap();
+            match to_writer(&mut my_stream, &ev) {
+                Ok(()) => (),
+                Err(e) => {
+                    println!("Manager connection error: {}", e);
+                    return;
+                }
+            }
         }
         println!("Work unit result thread stopping");
     });
