@@ -12,6 +12,7 @@ use serde_cbor::StreamDeserializer;
 use serde_cbor::de::IoRead;
 use std::net::TcpStream;
 
+use crate::constants::DEFAULT_PORT;
 use crate::scene::{Scene, SceneData};
 use crate::color::Color;
 use crate::image::Image;
@@ -176,7 +177,12 @@ pub struct NetworkWorker {
 }
 
 impl NetworkWorker {
-    pub fn new(endpoint: &String) -> NetworkWorker {
+    pub fn new(raw_endpoint: &String) -> NetworkWorker {
+        let endpoint = match raw_endpoint.find(':') {
+            None => format!("{}:{}", raw_endpoint, DEFAULT_PORT),
+            Some(_) => raw_endpoint.clone(),
+        };
+
         let tname = format!("NetworkWorker({})", endpoint);
         let stream = TcpStream::connect(endpoint.as_str()).unwrap();
 

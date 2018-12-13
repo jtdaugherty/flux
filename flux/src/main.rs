@@ -136,7 +136,7 @@ fn main() {
     }
 
     for endpoint in config.network_workers {
-        println!("Connecting to network worker");
+        println!("Connecting to {}", &endpoint);
         let worker = NetworkWorker::new(&endpoint);
         worker_handles.push(worker.handle());
         net_workers.push(worker);
