@@ -25,19 +25,21 @@ const DEFAULT_SAMPLE_ROOT: usize = 1;
 const DEFAULT_DEPTH: usize = 5;
 
 fn main() {
+    // Get the configuration from the command-line arguments
     let config = config_from_args();
 
+    // Build a job configuration from the local config
     let c = JobConfiguration {
         rows_per_work_unit: config.rows_per_work_unit,
         max_trace_depth: config.max_depth,
         sample_root: config.sample_root,
     };
 
+    // Load the YAML scene file
     let scene_file = File::open(config.input_filename).unwrap();
     let s: SceneData = serde_yaml::from_reader(scene_file).unwrap();
 
-    // Set up workers ////////////////////////////////////////////////////////
-
+    // Check that we have at least one worker
     if !config.use_local_worker && config.network_workers.is_empty() {
         println!("No workers specified, exiting");
         return;
@@ -47,12 +49,14 @@ fn main() {
     let mut local_worker: Option<LocalWorker> = None;
     let mut net_workers: Vec<NetworkWorker> = vec![];
 
+    // Start local worker, if any
     if config.use_local_worker {
         let worker = LocalWorker::new();
         worker_handles.push(worker.handle());
         local_worker = Some(worker);
     }
 
+    // Connect to network workers, if any
     for endpoint in config.network_workers {
         println!("Connecting to {}", &endpoint);
         let worker = NetworkWorker::new(&endpoint);
@@ -60,16 +64,19 @@ fn main() {
         net_workers.push(worker);
     }
 
-    // Set up manager ////////////////////////////////////////////////////////
-
+    // Start an image accumulator thread
     let image_builder = ImageBuilder::new();
 
+    // Start the rendering manager
     println!("Starting rendering manager");
     let mut manager = RenderManager::new(worker_handles, image_builder.sender());
 
+    // Submit the job to the rendering manager
     println!("Sending job to rendering manager");
     let job = manager.schedule_job(&s, c);
 
+    // If the live preview was requested, create an SDL window and
+    // update it from the image accumulator
     if config.show_live_preview {
         // SDL setup /////////////////////////////////////////////////////////////
         let sdl_context = sdl2::init().unwrap();
@@ -152,16 +159,20 @@ fn main() {
             ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
         }
     } else {
+        // Else the live preview was not requested, so just block until
+        // the job completes.
         job.wait();
     }
 
     println!("Shutting down");
 
     if let Some(w) = local_worker {
+        // Stop the local worker
         w.stop();
     }
 
     for w in net_workers {
+        // Notify network workers that we're done and disconnect
         w.stop();
     }
 
