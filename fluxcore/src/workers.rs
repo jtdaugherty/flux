@@ -5,7 +5,7 @@ use std::net::TcpStream;
 use std::io;
 
 use rayon;
-use serde_cbor::{from_reader, to_writer};
+use serde_cbor::{to_vec, from_reader, to_writer};
 use serde_cbor::StreamDeserializer;
 use serde_cbor::de::IoRead;
 
@@ -125,11 +125,17 @@ impl NetworkWorker {
         match TcpStream::connect(endpoint.as_str()) {
             Err(e) => Err(e),
             Ok(st) => {
+                let v = to_vec(&WorkerInfo { num_threads: 1, }).unwrap();
+                println!("Expecting {} bytes of info", v.len());
+
+                println!("Getting info");
                 // Expect that the first thing to do is read a usize
                 // from the network stream indicating the number of
                 // threads that the remote end will be using.
                 let mut stream = st;
-                let worker_info = from_reader(&mut stream).unwrap();
+                let worker_info: WorkerInfo = from_reader(&mut stream).unwrap();
+
+                println!("Got info");
 
                 let (s, r): (Sender<WorkerRequest>, Receiver<WorkerRequest>) = unbounded();
 
