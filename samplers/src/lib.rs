@@ -1,8 +1,6 @@
 
-extern crate nalgebra;
 use nalgebra::{Vector3, normalize};
 
-extern crate rand;
 use rand::IsaacRng;
 use rand::Rng;
 use rand::distributions::{Distribution, Uniform};

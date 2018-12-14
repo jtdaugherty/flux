@@ -1,10 +1,4 @@
 
-extern crate fluxcore;
-extern crate serde_cbor;
-extern crate crossbeam;
-extern crate clap;
-extern crate num_cpus;
-
 use crossbeam::channel::{Sender, Receiver, unbounded};
 use crossbeam::sync::WaitGroup;
 

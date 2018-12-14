@@ -1,11 +1,4 @@
 
-extern crate fluxcore;
-extern crate nalgebra;
-extern crate sdl2;
-extern crate clap;
-extern crate serde_yaml;
-extern crate num_cpus;
-
 use std::time::Duration;
 use std::str::FromStr;
 
