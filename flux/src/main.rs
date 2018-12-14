@@ -8,6 +8,7 @@ use sdl2::keyboard::Keycode;
 use sdl2::image::{INIT_PNG, INIT_JPG};
 
 use fluxcore::manager::*;
+use fluxcore::workers::{LocalWorker, NetworkWorker};
 use fluxcore::job::JobConfiguration;
 use fluxcore::scene::*;
 

@@ -4,7 +4,8 @@ use crossbeam::sync::WaitGroup;
 
 use fluxcore::job::*;
 use fluxcore::constants::DEFAULT_PORT;
-use fluxcore::manager::{Worker, LocalWorker, NetworkWorkerRequest, RenderEvent, WorkerHandle};
+use fluxcore::manager::{Worker, WorkerHandle, RenderEvent};
+use fluxcore::workers::*;
 
 use serde_cbor::StreamDeserializer;
 use serde_cbor::de::IoRead;
