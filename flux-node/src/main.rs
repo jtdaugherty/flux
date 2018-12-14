@@ -28,7 +28,9 @@ fn handle_client(stream: TcpStream, worker: &WorkerHandle, config: &Config) -> i
     };
 
     let mut owned_stream = stream;
+    println!("Sending info");
     to_writer(&mut owned_stream, &worker_info).unwrap();
+    println!("Done sending info");
 
     let thread_stream = owned_stream.try_clone().unwrap();
     let stream_de: StreamDeserializer<'_, IoRead<TcpStream>, NetworkWorkerRequest> =
