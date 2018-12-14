@@ -2,6 +2,7 @@
 use crossbeam::channel::{Sender, Receiver, unbounded};
 use std::thread;
 use std::net::TcpStream;
+use std::io;
 
 use rayon;
 use serde_cbor::to_writer;
@@ -104,107 +105,110 @@ pub struct NetworkWorker {
 }
 
 impl NetworkWorker {
-    pub fn new(raw_endpoint: &String) -> NetworkWorker {
+    pub fn new(raw_endpoint: &String) -> Result<NetworkWorker, io::Error> {
         let endpoint = match raw_endpoint.find(':') {
             None => format!("{}:{}", raw_endpoint, DEFAULT_PORT),
             Some(_) => raw_endpoint.clone(),
         };
 
         let tname = format!("NetworkWorker({})", endpoint);
-        let stream = TcpStream::connect(endpoint.as_str()).unwrap();
+        match TcpStream::connect(endpoint.as_str()) {
+            Err(e) => Err(e),
+            Ok(stream) => {
+                let (s, r): (Sender<WorkerRequest>, Receiver<WorkerRequest>) = unbounded();
 
-        let (s, r): (Sender<WorkerRequest>, Receiver<WorkerRequest>) = unbounded();
+                let handle = thread::Builder::new().name(tname).spawn(move || {
+                    let mut my_stream = stream;
+                    let stream_clone = my_stream.try_clone().unwrap();
+                    let mut stream_de: StreamDeserializer<'_, IoRead<TcpStream>, RenderEvent> =
+                        StreamDeserializer::new(IoRead::new(stream_clone));
 
-        let handle = thread::Builder::new().name(tname).spawn(move || {
-            let mut my_stream = stream;
-            let stream_clone = my_stream.try_clone().unwrap();
-            let mut stream_de: StreamDeserializer<'_, IoRead<TcpStream>, RenderEvent> =
-                StreamDeserializer::new(IoRead::new(stream_clone));
+                    while let Ok(Some((job_boxed, recv_unit, send_result, wg))) = r.recv() {
+                        let job = *job_boxed;
 
-            while let Ok(Some((job_boxed, recv_unit, send_result, wg))) = r.recv() {
-                let job = *job_boxed;
+                        d_println(format!("Network worker: got job {:?}", job.id));
 
-                d_println(format!("Network worker: got job {:?}", job.id));
+                        to_writer(&mut my_stream, &NetworkWorkerRequest::SetJob(Box::new(job))).unwrap();
 
-                to_writer(&mut my_stream, &NetworkWorkerRequest::SetJob(Box::new(job))).unwrap();
+                        let buf = 2;
+                        let mut sent = 0;
 
-                let buf = 2;
-                let mut sent = 0;
-
-                for _ in 0..buf {
-                    match recv_unit.recv() {
-                        Err(e) => {
-                            d_println(format!("Error sending initial work unit: {}", e));
+                        for _ in 0..buf {
+                            match recv_unit.recv() {
+                                Err(e) => {
+                                    d_println(format!("Error sending initial work unit: {}", e));
+                                }
+                                Ok(unit) => {
+                                    d_println(format!("Sending initial work unit"));
+                                    to_writer(&mut my_stream, &NetworkWorkerRequest::WorkUnit(unit)).unwrap();
+                                    sent += 1;
+                                },
+                            };
                         }
-                        Ok(unit) => {
-                            d_println(format!("Sending initial work unit"));
+
+                        d_println(format!("NetworkWorker sending remaining work units"));
+
+                        while let Ok(unit) = recv_unit.recv() {
+                            d_println(format!("Network worker: got work unit {:?}", unit));
+
                             to_writer(&mut my_stream, &NetworkWorkerRequest::WorkUnit(unit)).unwrap();
-                            sent += 1;
-                        },
-                    };
-                }
 
-                d_println(format!("NetworkWorker sending remaining work units"));
-
-                while let Ok(unit) = recv_unit.recv() {
-                    d_println(format!("Network worker: got work unit {:?}", unit));
-
-                    to_writer(&mut my_stream, &NetworkWorkerRequest::WorkUnit(unit)).unwrap();
-
-                    match stream_de.next() {
-                        None => {
-                            d_println("Stream deserializer iterator finished".to_string());
-                        },
-                        Some(result) => {
-                            match result {
-                                Ok(ev) => {
-                                    d_println(format!("Network worker got a render event from the remote end"));
-                                    send_result.send(Some(ev)).unwrap();
+                            match stream_de.next() {
+                                None => {
+                                    d_println("Stream deserializer iterator finished".to_string());
                                 },
-                                Err(e) => {
-                                    d_println(format!("Network worker got error from deserializer: {}", e));
-                                    return;
+                                Some(result) => {
+                                    match result {
+                                        Ok(ev) => {
+                                            d_println(format!("Network worker got a render event from the remote end"));
+                                            send_result.send(Some(ev)).unwrap();
+                                        },
+                                        Err(e) => {
+                                            d_println(format!("Network worker got error from deserializer: {}", e));
+                                            return;
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
-                }
 
-                d_println(format!("NetworkWorker collecting final {} results", sent));
+                        d_println(format!("NetworkWorker collecting final {} results", sent));
 
-                for _ in 0..sent {
-                    match stream_de.next() {
-                        None => {
-                            d_println("Stream deserializer iterator finished".to_string());
-                        },
-                        Some(result) => {
-                            match result {
-                                Ok(ev) => {
-                                    send_result.send(Some(ev)).unwrap();
+                        for _ in 0..sent {
+                            match stream_de.next() {
+                                None => {
+                                    d_println("Stream deserializer iterator finished".to_string());
                                 },
-                                Err(e) => {
-                                    d_println(format!("Network worker got error from deserializer: {}", e));
-                                    return;
+                                Some(result) => {
+                                    match result {
+                                        Ok(ev) => {
+                                            send_result.send(Some(ev)).unwrap();
+                                        },
+                                        Err(e) => {
+                                            d_println(format!("Network worker got error from deserializer: {}", e));
+                                            return;
+                                        }
+                                    }
                                 }
                             }
                         }
+
+                        d_println(format!("NetworkWorker sending Done message"));
+
+                        to_writer(&mut my_stream, &NetworkWorkerRequest::Done).unwrap();
+
+                        d_println(format!("Network worker finished job"));
+                        drop(wg);
                     }
-                }
 
-                d_println(format!("NetworkWorker sending Done message"));
+                    d_println(format!("Network worker shutting down"));
+                }).unwrap();
 
-                to_writer(&mut my_stream, &NetworkWorkerRequest::Done).unwrap();
-
-                d_println(format!("Network worker finished job"));
-                drop(wg);
+                Ok(NetworkWorker {
+                    sender: s,
+                    thread_handle: handle,
+                })
             }
-
-            d_println(format!("Network worker shutting down"));
-        }).unwrap();
-
-        NetworkWorker {
-            sender: s,
-            thread_handle: handle,
         }
     }
 }

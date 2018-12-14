@@ -1,6 +1,7 @@
 
 use std::time::Duration;
 use std::str::FromStr;
+use std::process::exit;
 
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::event::Event;
@@ -47,9 +48,16 @@ fn main() {
     // Connect to network workers, if any
     for endpoint in config.network_workers {
         println!("Connecting to {}", &endpoint);
-        let worker = NetworkWorker::new(&endpoint);
-        worker_handles.push(worker.handle());
-        net_workers.push(worker);
+        match NetworkWorker::new(&endpoint) {
+            Err(e) => {
+                println!("Could not connect network node '{}': {}", endpoint, e);
+                exit(1);
+            }
+            Ok(worker) => {
+                worker_handles.push(worker.handle());
+                net_workers.push(worker);
+            }
+        }
     }
 
     // Start an image accumulator thread
