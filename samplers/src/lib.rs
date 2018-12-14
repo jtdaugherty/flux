@@ -61,6 +61,17 @@ impl Sampler {
         }).collect()
     }
 
+    pub fn grid_multi_jittered(&mut self, root: usize) -> Vec<UnitSquareSample> {
+        let samples = self.grid_multi_jittered_base(root);
+
+        let y_shuffled: Vec<Vec<UnitSquareSample>> = samples.iter().map(|vec| self.shuffle_y(None, &vec, root)).collect();
+        let x_shuffled: Vec<Vec<UnitSquareSample>> = transpose(
+            transpose(y_shuffled).iter().map(|v| self.shuffle_x(None, &v, root)).collect()
+            );
+
+        concat_vec(x_shuffled)
+    }
+
     pub fn grid_correlated_multi_jittered(&mut self, root: usize) -> Vec<UnitSquareSample> {
         let samples = self.grid_multi_jittered_base(root);
 
@@ -70,15 +81,23 @@ impl Sampler {
         self.rng.shuffle(&mut x_idxs);
         self.rng.shuffle(&mut y_idxs);
 
-        let y_shuffled: Vec<Vec<UnitSquareSample>> = samples.iter().map(|vec| self.shuffle_y(&y_idxs, &vec)).collect();
+        let y_shuffled: Vec<Vec<UnitSquareSample>> = samples.iter().map(|vec| self.shuffle_y(Some(&y_idxs), &vec, root)).collect();
         let x_shuffled: Vec<Vec<UnitSquareSample>> = transpose(
-            transpose(y_shuffled).iter().map(|v| self.shuffle_x(&x_idxs, &v)).collect()
+            transpose(y_shuffled).iter().map(|v| self.shuffle_x(Some(&x_idxs), &v, root)).collect()
             );
 
         concat_vec(x_shuffled)
     }
 
-    fn shuffle_y(&self, idxs: &Vec<usize>, vals: &Vec<UnitSquareSample>) -> Vec<UnitSquareSample> {
+    fn shuffle_y(&mut self, m_idxs: Option<&Vec<usize>>, vals: &Vec<UnitSquareSample>, root: usize) -> Vec<UnitSquareSample> {
+        let mut new_idxs: Vec<usize> = (0..root).collect();
+        self.rng.shuffle(&mut new_idxs);
+
+        let idxs = match m_idxs {
+            Some(is) => is,
+            None => &new_idxs,
+        };
+
         idxs.iter().zip(vals).map(|(idx, sample)| {
             let other = &vals[*idx];
             UnitSquareSample {
@@ -88,7 +107,15 @@ impl Sampler {
         }).collect()
     }
 
-    fn shuffle_x(&self, idxs: &Vec<usize>, vals: &Vec<UnitSquareSample>) -> Vec<UnitSquareSample> {
+    fn shuffle_x(&mut self, m_idxs: Option<&Vec<usize>>, vals: &Vec<UnitSquareSample>, root: usize) -> Vec<UnitSquareSample> {
+        let mut new_idxs: Vec<usize> = (0..root).collect();
+        self.rng.shuffle(&mut new_idxs);
+
+        let idxs = match m_idxs {
+            Some(is) => is,
+            None => &new_idxs,
+        };
+
         idxs.iter().zip(vals).map(|(idx, sample)| {
             let other = &vals[*idx];
             UnitSquareSample {
