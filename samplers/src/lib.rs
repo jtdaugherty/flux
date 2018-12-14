@@ -13,7 +13,7 @@ pub struct UnitDiscSample {
     pub y: f64,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct UnitSquareSample {
     pub x: f64,
     pub y: f64,
@@ -41,6 +41,61 @@ impl Sampler {
                 x: p.x + (between.sample(&mut self.rng) - 0.5) * increment,
                 y: p.y + (between.sample(&mut self.rng) - 0.5) * increment,
             }).collect()
+    }
+
+    fn grid_multi_jittered_base(&mut self, root: usize) -> Vec<Vec<UnitSquareSample>> {
+        let r2 = (root * root) as f64;
+        let r_float = root as f64;
+        let between = Uniform::from(0.0..1.0);
+        let range: Vec<(f64, f64)> = (0..root).map(|v| (v as f64, (root - 1 - v) as f64)).collect();
+
+        range.iter().map(|(big_row, little_col)| {
+            range.iter().map(|(big_col, little_row)| {
+                let a = between.sample(&mut self.rng);
+                let b = between.sample(&mut self.rng);
+                UnitSquareSample {
+                    x: (big_row / r_float) + (little_row + a) / r2,
+                    y: (big_col / r_float) + (little_col + b) / r2,
+                }
+            }).collect()
+        }).collect()
+    }
+
+    pub fn grid_correlated_multi_jittered(&mut self, root: usize) -> Vec<UnitSquareSample> {
+        let samples = self.grid_multi_jittered_base(root);
+
+        let mut x_idxs: Vec<usize> = (0..root).collect();
+        let mut y_idxs: Vec<usize> = (0..root).collect();
+
+        self.rng.shuffle(&mut x_idxs);
+        self.rng.shuffle(&mut y_idxs);
+
+        let y_shuffled: Vec<Vec<UnitSquareSample>> = samples.iter().map(|vec| self.shuffle_y(&y_idxs, &vec)).collect();
+        let x_shuffled: Vec<Vec<UnitSquareSample>> = transpose(
+            transpose(y_shuffled).iter().map(|v| self.shuffle_x(&x_idxs, &v)).collect()
+            );
+
+        concat_vec(x_shuffled)
+    }
+
+    fn shuffle_y(&self, idxs: &Vec<usize>, vals: &Vec<UnitSquareSample>) -> Vec<UnitSquareSample> {
+        idxs.iter().zip(vals).map(|(idx, sample)| {
+            let other = &vals[*idx];
+            UnitSquareSample {
+                x: sample.x,
+                y: other.y,
+            }
+        }).collect()
+    }
+
+    fn shuffle_x(&self, idxs: &Vec<usize>, vals: &Vec<UnitSquareSample>) -> Vec<UnitSquareSample> {
+        idxs.iter().zip(vals).map(|(idx, sample)| {
+            let other = &vals[*idx];
+            UnitSquareSample {
+                x: other.x,
+                y: sample.y,
+            }
+        }).collect()
     }
 }
 
@@ -106,4 +161,28 @@ pub fn grid_regular(root: usize) -> Vec<UnitSquareSample> {
 
     iproduct!(&range, &range).map(
         |(x, y)| UnitSquareSample { x: x.clone(), y: y.clone(), }).collect()
+}
+
+pub fn concat_vec<T>(v: Vec<Vec<T>>) -> Vec<T> {
+    let mut v0 = vec![];
+    let mut vs = v;
+
+    for i in 0..vs.len() {
+        v0.append(&mut vs[i]);
+    }
+
+    v0
+}
+
+pub fn transpose<T: Copy>(v: Vec<Vec<T>>) -> Vec<Vec<T>> {
+    match v.iter().map(|v2| v2.len()).max() {
+        None => panic!("transpose: input vector empty"),
+        Some(max_length) => {
+            (0..max_length).map(|i| {
+                (0..v.len()).map(|j| {
+                    v[j][i]
+                }).collect()
+            }).collect()
+        },
+    }
 }
