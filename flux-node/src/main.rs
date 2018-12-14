@@ -23,16 +23,16 @@ fn handle_client(stream: TcpStream, worker: &WorkerHandle, config: &Config) -> i
 
     println!("Got connection from {}", peer);
 
-    let mut thread_stream = stream.try_clone().unwrap();
-
     let worker_info = WorkerInfo {
         num_threads: config.num_threads,
     };
 
-    to_writer(&mut thread_stream, &worker_info).unwrap();
+    let mut owned_stream = stream;
+    to_writer(&mut owned_stream, &worker_info).unwrap();
 
+    let thread_stream = owned_stream.try_clone().unwrap();
     let stream_de: StreamDeserializer<'_, IoRead<TcpStream>, NetworkWorkerRequest> =
-        StreamDeserializer::new(IoRead::new(stream));
+        StreamDeserializer::new(IoRead::new(owned_stream));
 
     let (wu_send, wu_recv): (Sender<WorkUnit>, Receiver<WorkUnit>) = unbounded();
     let (re_send, re_recv): (Sender<Option<RenderEvent>>, Receiver<Option<RenderEvent>>) = unbounded();
