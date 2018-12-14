@@ -70,9 +70,9 @@ fn main() {
     println!("Sending job to rendering manager");
     let job = manager.schedule_job(&s, jobcfg);
 
-    // If the live preview was requested, create an SDL window and
-    // update it from the image accumulator
     if config.show_live_preview {
+        // If the live preview was requested, create an SDL window and
+        // update it from the image accumulator
         show_preview(&job, &s, &image_builder);
     } else {
         // Else the live preview was not requested, so just block until
