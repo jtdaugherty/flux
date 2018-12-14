@@ -8,3 +8,4 @@ edition = "2018"
 samplers = { path = "../samplers" }
 fluxcore = { path = "../fluxcore" }
 nalgebra = "0.16.5"
+clap = "2.32"
