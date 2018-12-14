@@ -206,6 +206,7 @@ fn config_from_args() -> Config {
              .long("node")
              .value_name("ADDRESS[:PORT]")
              .help("Render using the specified flux-node process at this address")
+             .multiple(true)
              .takes_value(true))
         .arg(Arg::with_name("depth")
              .short("d")
