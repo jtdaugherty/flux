@@ -12,10 +12,8 @@ use crate::color::Color;
 use crate::image::Image;
 use crate::job::{JobConfiguration, Job, JobID, JobIDAllocator, WorkUnit};
 
-const DEBUG: bool = false;
-
 pub fn d_println(s: String) {
-    if DEBUG {
+    if cfg!(debug_assertions) {
         let t = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
         println!("{} {}", to_ms(t), s);
     }
