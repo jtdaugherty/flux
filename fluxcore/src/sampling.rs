@@ -14,16 +14,16 @@ impl MasterSampleSets {
                max_depth: usize, num_sets: usize) -> MasterSampleSets {
         MasterSampleSets {
             pixel_sets: (0..num_sets).map(|_|
-                sampler.grid_jittered(sample_root)).collect(),
+                sampler.grid_correlated_multi_jittered(sample_root)).collect(),
 
             disc_sets: (0..num_sets).map(|_|
                 samplers::to_poisson_disc(
-                    sampler.grid_jittered(sample_root))).collect(),
+                    sampler.grid_correlated_multi_jittered(sample_root))).collect(),
 
             hemi_sets: (0..num_sets).map(|_|
                 (0..max_depth).map(|_|
                     samplers::to_hemisphere(
-                        sampler.grid_jittered(sample_root),
+                        sampler.grid_correlated_multi_jittered(sample_root),
                         0.0)
                     ).collect()
                 ).collect(),
