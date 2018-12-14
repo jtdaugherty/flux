@@ -18,12 +18,14 @@ use std::str::FromStr;
 
 use clap::{Arg, App};
 
-fn handle_client(stream: TcpStream, worker: &WorkerHandle) -> io::Result<()> {
+fn handle_client(stream: TcpStream, worker: &WorkerHandle, config: &Config) -> io::Result<()> {
     let peer = stream.peer_addr()?;
 
     println!("Got connection from {}", peer);
 
-    let thread_stream = stream.try_clone().unwrap();
+    let mut thread_stream = stream.try_clone().unwrap();
+    to_writer(&mut thread_stream, &config.num_threads).unwrap();
+
     let stream_de: StreamDeserializer<'_, IoRead<TcpStream>, NetworkWorkerRequest> =
         StreamDeserializer::new(IoRead::new(stream));
 
@@ -86,12 +88,12 @@ fn handle_client(stream: TcpStream, worker: &WorkerHandle) -> io::Result<()> {
     Ok(())
 }
 
-fn run_server(bind_address: String, worker: &LocalWorker) -> io::Result<()> {
+fn run_server(bind_address: String, worker: &LocalWorker, config: &Config) -> io::Result<()> {
     let listener = TcpListener::bind(bind_address)?;
     let handle = worker.handle();
 
     for stream in listener.incoming() {
-        match handle_client(stream?, &handle) {
+        match handle_client(stream?, &handle, &config) {
             Ok(()) => {
             },
             Err(e) => {
@@ -151,7 +153,7 @@ fn main() -> io::Result<()> {
     println!("Bind address: {}", bind_address);
 
     let worker = LocalWorker::new(config.num_threads);
-    run_server(bind_address, &worker)?;
+    run_server(bind_address, &worker, &config)?;
 
     worker.stop();
 

@@ -187,6 +187,7 @@ impl RenderManager {
 pub trait Worker {
     fn handle(&self) -> WorkerHandle;
     fn stop(self);
+    fn num_threads(&self) -> usize;
 }
 
 pub struct ConsoleResultReporter {

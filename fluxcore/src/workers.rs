@@ -5,7 +5,7 @@ use std::net::TcpStream;
 use std::io;
 
 use rayon;
-use serde_cbor::to_writer;
+use serde_cbor::{from_reader, to_writer};
 use serde_cbor::StreamDeserializer;
 use serde_cbor::de::IoRead;
 
@@ -19,6 +19,7 @@ use crate::debug::d_println;
 pub struct LocalWorker {
     sender: Sender<WorkerRequest>,
     thread_handle: thread::JoinHandle<()>,
+    num_threads: usize,
 }
 
 impl LocalWorker {
@@ -78,6 +79,7 @@ impl LocalWorker {
         LocalWorker {
             sender: s,
             thread_handle: handle,
+            num_threads,
         }
     }
 }
@@ -91,6 +93,10 @@ impl Worker for LocalWorker {
         self.sender.send(None).ok();
         self.thread_handle.join().ok();
     }
+
+    fn num_threads(&self) -> usize {
+        self.num_threads
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -103,6 +109,7 @@ pub enum NetworkWorkerRequest {
 pub struct NetworkWorker {
     sender: Sender<WorkerRequest>,
     thread_handle: thread::JoinHandle<()>,
+    num_threads: usize,
 }
 
 impl NetworkWorker {
@@ -115,7 +122,12 @@ impl NetworkWorker {
         let tname = format!("NetworkWorker({})", endpoint);
         match TcpStream::connect(endpoint.as_str()) {
             Err(e) => Err(e),
-            Ok(stream) => {
+            Ok(st) => {
+                // Expect that the first thing to do is read a usize
+                // from the network stream indicating the number of
+                // threads that the remote end will be using.
+                let mut stream = st;
+                let num_threads = from_reader(&mut stream).unwrap();
                 let (s, r): (Sender<WorkerRequest>, Receiver<WorkerRequest>) = unbounded();
 
                 let handle = thread::Builder::new().name(tname).spawn(move || {
@@ -208,6 +220,7 @@ impl NetworkWorker {
                 Ok(NetworkWorker {
                     sender: s,
                     thread_handle: handle,
+                    num_threads,
                 })
             }
         }
@@ -222,5 +235,9 @@ impl Worker for NetworkWorker {
     fn stop(self) {
         self.sender.send(None).ok();
         self.thread_handle.join().ok();
+    }
+
+    fn num_threads(&self) -> usize {
+        self.num_threads
     }
 }
