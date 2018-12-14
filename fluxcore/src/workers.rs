@@ -129,11 +129,22 @@ impl NetworkWorker {
                 to_writer(&mut my_stream, &NetworkWorkerRequest::SetJob(Box::new(job))).unwrap();
 
                 let buf = 2;
+                let mut sent = 0;
 
                 for _ in 0..buf {
-                    let unit = recv_unit.recv().unwrap();
-                    to_writer(&mut my_stream, &NetworkWorkerRequest::WorkUnit(unit)).unwrap();
+                    match recv_unit.recv() {
+                        Err(e) => {
+                            d_println(format!("Error sending initial work unit: {}", e));
+                        }
+                        Ok(unit) => {
+                            d_println(format!("Sending initial work unit"));
+                            to_writer(&mut my_stream, &NetworkWorkerRequest::WorkUnit(unit)).unwrap();
+                            sent += 1;
+                        },
+                    };
                 }
+
+                d_println(format!("NetworkWorker sending remaining work units"));
 
                 while let Ok(unit) = recv_unit.recv() {
                     d_println(format!("Network worker: got work unit {:?}", unit));
@@ -159,7 +170,9 @@ impl NetworkWorker {
                     }
                 }
 
-                for _ in 0..buf {
+                d_println(format!("NetworkWorker collecting final {} results", sent));
+
+                for _ in 0..sent {
                     match stream_de.next() {
                         None => {
                             d_println("Stream deserializer iterator finished".to_string());
@@ -177,6 +190,8 @@ impl NetworkWorker {
                         }
                     }
                 }
+
+                d_println(format!("NetworkWorker sending Done message"));
 
                 to_writer(&mut my_stream, &NetworkWorkerRequest::Done).unwrap();
 
