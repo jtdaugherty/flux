@@ -184,10 +184,21 @@ impl RenderManager {
     }
 }
 
+#[derive(Serialize, Deserialize, Copy, Clone)]
+pub struct WorkerInfo {
+    pub num_threads: usize,
+}
+
+impl WorkerInfo {
+    pub fn print(&self) {
+        println!("Threads: {}", self.num_threads);
+    }
+}
+
 pub trait Worker {
     fn handle(&self) -> WorkerHandle;
     fn stop(self);
-    fn num_threads(&self) -> usize;
+    fn info(&self) -> WorkerInfo;
 }
 
 pub struct ConsoleResultReporter {

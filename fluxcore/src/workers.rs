@@ -19,7 +19,7 @@ use crate::debug::d_println;
 pub struct LocalWorker {
     sender: Sender<WorkerRequest>,
     thread_handle: thread::JoinHandle<()>,
-    num_threads: usize,
+    worker_info: WorkerInfo,
 }
 
 impl LocalWorker {
@@ -79,7 +79,9 @@ impl LocalWorker {
         LocalWorker {
             sender: s,
             thread_handle: handle,
-            num_threads,
+            worker_info: WorkerInfo {
+                num_threads,
+            },
         }
     }
 }
@@ -94,8 +96,8 @@ impl Worker for LocalWorker {
         self.thread_handle.join().ok();
     }
 
-    fn num_threads(&self) -> usize {
-        self.num_threads
+    fn info(&self) -> WorkerInfo {
+        self.worker_info
     }
 }
 
@@ -109,7 +111,7 @@ pub enum NetworkWorkerRequest {
 pub struct NetworkWorker {
     sender: Sender<WorkerRequest>,
     thread_handle: thread::JoinHandle<()>,
-    num_threads: usize,
+    worker_info: WorkerInfo,
 }
 
 impl NetworkWorker {
@@ -127,7 +129,7 @@ impl NetworkWorker {
                 // from the network stream indicating the number of
                 // threads that the remote end will be using.
                 let mut stream = st;
-                let num_threads: usize = from_reader(&mut stream).unwrap();
+                let worker_info = from_reader(&mut stream).unwrap();
 
                 let (s, r): (Sender<WorkerRequest>, Receiver<WorkerRequest>) = unbounded();
 
@@ -221,7 +223,7 @@ impl NetworkWorker {
                 Ok(NetworkWorker {
                     sender: s,
                     thread_handle: handle,
-                    num_threads,
+                    worker_info,
                 })
             }
         }
@@ -238,7 +240,7 @@ impl Worker for NetworkWorker {
         self.thread_handle.join().ok();
     }
 
-    fn num_threads(&self) -> usize {
-        self.num_threads
+    fn info(&self) -> WorkerInfo {
+        self.worker_info
     }
 }

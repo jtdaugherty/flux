@@ -41,7 +41,8 @@ fn main() {
     // Start local worker, if any
     if config.use_local_worker {
         let worker = LocalWorker::new(config.num_threads);
-        println!("Local worker ready, {} thread(s)", worker.num_threads());
+        println!("Local worker ready, info:");
+        worker.info().print();
         worker_handles.push(worker.handle());
         local_worker = Some(worker);
     }
@@ -55,7 +56,9 @@ fn main() {
                 exit(1);
             }
             Ok(worker) => {
-                println!("Network worker ready, {} thread(s)", worker.num_threads());
+                println!("Network worker ready, info:");
+                worker.info().print();
+
                 worker_handles.push(worker.handle());
                 net_workers.push(worker);
             }

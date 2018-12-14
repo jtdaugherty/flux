@@ -4,7 +4,7 @@ use crossbeam::sync::WaitGroup;
 
 use fluxcore::job::*;
 use fluxcore::constants::DEFAULT_PORT;
-use fluxcore::manager::{Worker, WorkerHandle, RenderEvent};
+use fluxcore::manager::{Worker, WorkerHandle, RenderEvent, WorkerInfo};
 use fluxcore::workers::*;
 
 use serde_cbor::StreamDeserializer;
@@ -24,7 +24,12 @@ fn handle_client(stream: TcpStream, worker: &WorkerHandle, config: &Config) -> i
     println!("Got connection from {}", peer);
 
     let mut thread_stream = stream.try_clone().unwrap();
-    to_writer(&mut thread_stream, &config.num_threads).unwrap();
+
+    let worker_info = WorkerInfo {
+        num_threads: config.num_threads,
+    };
+
+    to_writer(&mut thread_stream, &worker_info).unwrap();
 
     let stream_de: StreamDeserializer<'_, IoRead<TcpStream>, NetworkWorkerRequest> =
         StreamDeserializer::new(IoRead::new(stream));
