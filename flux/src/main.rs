@@ -23,13 +23,6 @@ fn main() {
     // Get the configuration from the command-line arguments
     let config = config_from_args();
 
-    // Build a job configuration from the local config
-    let c = JobConfiguration {
-        rows_per_work_unit: config.rows_per_work_unit,
-        max_trace_depth: config.max_depth,
-        sample_root: config.sample_root,
-    };
-
     // Load the YAML scene file
     let scene_file = File::open(config.input_filename).unwrap();
     let s: SceneData = serde_yaml::from_reader(scene_file).unwrap();
@@ -66,9 +59,16 @@ fn main() {
     println!("Starting rendering manager");
     let mut manager = RenderManager::new(worker_handles, image_builder.sender());
 
+    // Build a job configuration from the local config
+    let jobcfg = JobConfiguration {
+        rows_per_work_unit: config.rows_per_work_unit,
+        max_trace_depth: config.max_depth,
+        sample_root: config.sample_root,
+    };
+
     // Submit the job to the rendering manager
     println!("Sending job to rendering manager");
-    let job = manager.schedule_job(&s, c);
+    let job = manager.schedule_job(&s, jobcfg);
 
     // If the live preview was requested, create an SDL window and
     // update it from the image accumulator
