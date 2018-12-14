@@ -73,87 +73,7 @@ fn main() {
     // If the live preview was requested, create an SDL window and
     // update it from the image accumulator
     if config.show_live_preview {
-        // SDL setup /////////////////////////////////////////////////////////////
-        let sdl_context = sdl2::init().unwrap();
-        let video_subsystem = sdl_context.video().unwrap();
-        let _image_context = sdl2::image::init(INIT_PNG | INIT_JPG).unwrap();
-
-        let image_width = s.output_settings.image_width;
-        let image_height = s.output_settings.image_height;
-        let window = video_subsystem.window("flux render",
-                                            image_width as u32,
-                                            image_height as u32)
-            .position_centered()
-            .build()
-            .unwrap();
-
-        let mut canvas = window.into_canvas().present_vsync().build().unwrap();
-        let texture_creator = canvas.texture_creator();
-        let mut texture = texture_creator.create_texture_streaming(
-            PixelFormatEnum::RGB24,
-            image_width as u32,
-            image_height as u32
-            ).unwrap();
-
-        let mut event_pump = sdl_context.event_pump().unwrap();
-
-        // Set up GUI ////////////////////////////////////////////////////////////
-
-        let mut copied_rows: Vec<bool> = (0..image_height).map(|_| false).collect();
-        let mut finished = false;
-
-        'running: loop {
-            {
-                if !finished {
-                    let img_ref = image_builder.get_image();
-                    let mut opt = img_ref.lock().unwrap();
-                    match opt.as_mut() {
-                        None => (),
-                        Some(img) => {
-                            let mut num_skipped_rows = 0;
-                            texture.with_lock(None, |buffer: &mut [u8], pitch: usize| {
-                                for y in 0..image_height {
-                                    if !copied_rows[y] {
-                                        let ps = &img.pixels[y];
-
-                                        if !ps.is_empty() {
-                                            for (x, pixel) in ps.iter().enumerate() {
-                                                let offset = y*pitch + x*3;
-                                                buffer[offset] = (pixel.r * 255.99) as u8;
-                                                buffer[offset + 1] = (pixel.g * 255.99) as u8;
-                                                buffer[offset + 2] = (pixel.b * 255.99) as u8;
-                                            }
-                                            copied_rows[y] = true;
-                                        }
-                                    } else {
-                                        num_skipped_rows += 1;
-                                    }
-                                }
-                            }).unwrap();
-                            if num_skipped_rows == image_height {
-                                finished = true;
-                            }
-                        },
-                    }
-                }
-            }
-
-            canvas.copy(&texture, None, None).expect("Render failed");
-            canvas.present();
-
-            for event in event_pump.poll_iter() {
-                match event {
-                    Event::Quit {..} |
-                        Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                            job.cancel();
-                            break 'running
-                        },
-                    _ => {}
-                }
-            }
-
-            ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
-        }
+        show_preview(&job, &s, &image_builder);
     } else {
         // Else the live preview was not requested, so just block until
         // the job completes.
@@ -266,5 +186,89 @@ fn config_from_args() -> Config {
             None => num_cpus::get(),
             Some(t) => usize::from_str(t).unwrap(),
         },
+    }
+}
+
+fn show_preview(job: &JobHandle, s: &SceneData, image_builder: &ImageBuilder) {
+    // SDL setup /////////////////////////////////////////////////////////////
+    let sdl_context = sdl2::init().unwrap();
+    let video_subsystem = sdl_context.video().unwrap();
+    let _image_context = sdl2::image::init(INIT_PNG | INIT_JPG).unwrap();
+
+    let image_width = s.output_settings.image_width;
+    let image_height = s.output_settings.image_height;
+    let window = video_subsystem.window("flux render",
+                                        image_width as u32,
+                                        image_height as u32)
+        .position_centered()
+        .build()
+        .unwrap();
+
+    let mut canvas = window.into_canvas().present_vsync().build().unwrap();
+    let texture_creator = canvas.texture_creator();
+    let mut texture = texture_creator.create_texture_streaming(
+        PixelFormatEnum::RGB24,
+        image_width as u32,
+        image_height as u32
+        ).unwrap();
+
+    let mut event_pump = sdl_context.event_pump().unwrap();
+
+    // Set up GUI ////////////////////////////////////////////////////////////
+
+    let mut copied_rows: Vec<bool> = (0..image_height).map(|_| false).collect();
+    let mut finished = false;
+
+    'running: loop {
+        {
+            if !finished {
+                let img_ref = image_builder.get_image();
+                let mut opt = img_ref.lock().unwrap();
+                match opt.as_mut() {
+                    None => (),
+                    Some(img) => {
+                        let mut num_skipped_rows = 0;
+                        texture.with_lock(None, |buffer: &mut [u8], pitch: usize| {
+                            for y in 0..image_height {
+                                if !copied_rows[y] {
+                                    let ps = &img.pixels[y];
+
+                                    if !ps.is_empty() {
+                                        for (x, pixel) in ps.iter().enumerate() {
+                                            let offset = y*pitch + x*3;
+                                            buffer[offset] = (pixel.r * 255.99) as u8;
+                                            buffer[offset + 1] = (pixel.g * 255.99) as u8;
+                                            buffer[offset + 2] = (pixel.b * 255.99) as u8;
+                                        }
+                                        copied_rows[y] = true;
+                                    }
+                                } else {
+                                    num_skipped_rows += 1;
+                                }
+                            }
+                        }).unwrap();
+                        if num_skipped_rows == image_height {
+                            finished = true;
+                        }
+                    },
+                }
+            }
+        }
+
+        canvas.copy(&texture, None, None).expect("Render failed");
+        canvas.present();
+
+        for event in event_pump.poll_iter() {
+            match event {
+                Event::Quit {..} |
+                    Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
+                        job.cancel();
+                        break 'running
+                    },
+                _ => {}
+            }
+        }
+
+        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
 }
