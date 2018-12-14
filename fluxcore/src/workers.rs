@@ -86,8 +86,8 @@ impl Worker for LocalWorker {
     }
 
     fn stop(self) {
-        self.sender.send(None).unwrap();
-        self.thread_handle.join().unwrap();
+        self.sender.send(None).ok();
+        self.thread_handle.join().ok();
     }
 }
 
@@ -200,7 +200,7 @@ impl Worker for NetworkWorker {
     }
 
     fn stop(self) {
-        self.sender.send(None).unwrap();
-        self.thread_handle.join().unwrap();
+        self.sender.send(None).ok();
+        self.thread_handle.join().ok();
     }
 }
