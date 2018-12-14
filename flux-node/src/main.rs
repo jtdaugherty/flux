@@ -29,6 +29,7 @@ fn handle_client(stream: TcpStream, worker: &WorkerHandle, config: &Config) -> i
 
     let v = to_vec(&worker_info).unwrap();
     println!("Sending {} bytes of info", v.len());
+    println!("{:?}", v);
 
     let mut owned_stream = stream;
     println!("Sending info");

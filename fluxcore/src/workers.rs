@@ -125,8 +125,9 @@ impl NetworkWorker {
         match TcpStream::connect(endpoint.as_str()) {
             Err(e) => Err(e),
             Ok(st) => {
-                let v = to_vec(&WorkerInfo { num_threads: 1, }).unwrap();
+                let v = to_vec(&WorkerInfo { num_threads: 40, }).unwrap();
                 println!("Expecting {} bytes of info", v.len());
+                println!("{:?}", v);
 
                 println!("Getting info");
                 // Expect that the first thing to do is read a usize
