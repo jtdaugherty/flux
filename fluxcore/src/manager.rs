@@ -253,6 +253,7 @@ impl NetworkWorker {
                         Some(result) => {
                             match result {
                                 Ok(ev) => {
+                                    d_println(format!("Network worker got a render event from the remote end"));
                                     send_result.send(Some(ev)).unwrap();
                                 },
                                 Err(e) => {
