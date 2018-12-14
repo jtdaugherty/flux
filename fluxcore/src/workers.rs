@@ -127,7 +127,8 @@ impl NetworkWorker {
                 // from the network stream indicating the number of
                 // threads that the remote end will be using.
                 let mut stream = st;
-                let num_threads = from_reader(&mut stream).unwrap();
+                let num_threads: usize = from_reader(&mut stream).unwrap();
+
                 let (s, r): (Sender<WorkerRequest>, Receiver<WorkerRequest>) = unbounded();
 
                 let handle = thread::Builder::new().name(tname).spawn(move || {
