@@ -6,11 +6,12 @@ use std::fs::File;
 use std::thread;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH, Duration};
+use std::net::TcpStream;
 
+use rayon;
 use serde_cbor::to_writer;
 use serde_cbor::StreamDeserializer;
 use serde_cbor::de::IoRead;
-use std::net::TcpStream;
 
 use crate::constants::DEFAULT_PORT;
 use crate::scene::{Scene, SceneData};
@@ -319,7 +320,20 @@ pub struct LocalWorker {
 }
 
 impl LocalWorker {
-    pub fn new() -> LocalWorker {
+    pub fn new(num_threads: usize) -> LocalWorker {
+        let tp_result = rayon::ThreadPoolBuilder::new()
+            .num_threads(num_threads)
+            .build_global();
+        match tp_result {
+            Ok(_) => {
+                d_println(format!("LocalWorker set global thread pool size to {}", num_threads));
+            },
+            Err(_) => {
+                println!("Warning: global thread pool already configured, number of threads is {}",
+                         rayon::current_num_threads());
+            }
+        }
+
         let (s, r): (Sender<WorkerRequest>, Receiver<WorkerRequest>) = unbounded();
 
         let handle = thread::Builder::new().name("LocalWorker".to_string()).spawn(move || {

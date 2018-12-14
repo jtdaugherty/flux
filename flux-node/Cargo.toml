@@ -9,3 +9,4 @@ fluxcore = { path = "../fluxcore" }
 serde_cbor = "0.9"
 crossbeam = "0.5.0"
 clap = "2.32"
+num_cpus = "1.9"

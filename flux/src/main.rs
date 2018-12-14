@@ -4,6 +4,7 @@ extern crate nalgebra;
 extern crate sdl2;
 extern crate clap;
 extern crate serde_yaml;
+extern crate num_cpus;
 
 use std::time::Duration;
 use std::str::FromStr;
@@ -51,7 +52,7 @@ fn main() {
 
     // Start local worker, if any
     if config.use_local_worker {
-        let worker = LocalWorker::new();
+        let worker = LocalWorker::new(config.num_threads);
         worker_handles.push(worker.handle());
         local_worker = Some(worker);
     }
@@ -190,6 +191,7 @@ struct Config {
     rows_per_work_unit: usize,
     input_filename: String,
     show_live_preview: bool,
+    num_threads: usize,
 }
 
 fn config_from_args() -> Config {
@@ -225,6 +227,11 @@ fn config_from_args() -> Config {
              .short("g")
              .help("Show a live graphical preview window during rendering")
              .takes_value(false))
+        .arg(Arg::with_name("threads")
+             .short("t")
+             .long("threads")
+             .help("Number of rendering threads for the local worker (defaults to number of logical CPUs)")
+             .takes_value(true))
         .arg(Arg::with_name("sample_root")
              .short("r")
              .long("root")
@@ -259,6 +266,10 @@ fn config_from_args() -> Config {
         network_workers: match ms.values_of("network_worker") {
             None => vec![],
             Some(v) => v.map(|s| String::from(s)).collect(),
-        }
+        },
+        num_threads: match ms.value_of("threads") {
+            None => num_cpus::get(),
+            Some(t) => usize::from_str(t).unwrap(),
+        },
     }
 }

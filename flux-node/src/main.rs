@@ -3,6 +3,7 @@ extern crate fluxcore;
 extern crate serde_cbor;
 extern crate crossbeam;
 extern crate clap;
+extern crate num_cpus;
 
 use crossbeam::channel::{Sender, Receiver, unbounded};
 use crossbeam::sync::WaitGroup;
@@ -18,6 +19,7 @@ use serde_cbor::to_writer;
 use std::net::{TcpListener, TcpStream};
 use std::thread;
 use std::io;
+use std::str::FromStr;
 
 use clap::{Arg, App};
 
@@ -109,6 +111,7 @@ fn run_server(bind_address: String, worker: &LocalWorker) -> io::Result<()> {
 struct Config {
     pub listen_host: String,
     pub listen_port: String,
+    pub num_threads: usize,
 }
 
 fn config_from_args() -> Config {
@@ -125,6 +128,11 @@ fn config_from_args() -> Config {
              .short("p")
              .long("port")
              .help("Listen on this TCP port")
+             .takes_value(true))
+        .arg(Arg::with_name("threads")
+             .short("t")
+             .long("threads")
+             .help("Number of rendering threads (defaults to number of logical CPUs)")
              .takes_value(true));
 
     let ms = app.get_matches();
@@ -134,6 +142,10 @@ fn config_from_args() -> Config {
     Config {
         listen_host: ms.value_of("host").unwrap_or(default_host).to_string(),
         listen_port: ms.value_of("port").unwrap_or(default_port).to_string(),
+        num_threads: match ms.value_of("threads") {
+            None => num_cpus::get(),
+            Some(t) => usize::from_str(t).unwrap(),
+        },
     }
 }
 
@@ -143,7 +155,7 @@ fn main() -> io::Result<()> {
 
     println!("Bind address: {}", bind_address);
 
-    let worker = LocalWorker::new();
+    let worker = LocalWorker::new(config.num_threads);
     run_server(bind_address, &worker)?;
 
     worker.stop();

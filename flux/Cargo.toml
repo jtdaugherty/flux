@@ -10,6 +10,7 @@ fluxcore = { path = "../fluxcore" }
 nalgebra = "0.16.5"
 clap = "2.32"
 serde_yaml = "0.8"
+num_cpus = "1.9"
 
 [dependencies.sdl2]
 version = "0.31.0"
