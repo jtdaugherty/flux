@@ -5,23 +5,13 @@ use crossbeam::SendError;
 use std::fs::File;
 use std::thread;
 use std::sync::{Arc, Mutex};
-use std::time::{SystemTime, UNIX_EPOCH, Duration};
+use std::time::SystemTime;
 
 use crate::scene::{SceneData};
 use crate::color::Color;
 use crate::image::Image;
 use crate::job::{JobConfiguration, Job, JobID, JobIDAllocator, WorkUnit};
-
-pub fn d_println(s: String) {
-    if cfg!(debug_assertions) {
-        let t = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-        println!("{} {}", to_ms(t), s);
-    }
-}
-
-fn to_ms(d: Duration) -> u64 {
-    d.as_secs() * 1000 + d.subsec_nanos() as u64 / 1_000_000
-}
+use crate::debug::d_println;
 
 #[derive(Serialize, Deserialize)]
 pub enum RenderEvent {

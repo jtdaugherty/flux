@@ -14,6 +14,7 @@ use crate::scene::{Scene};
 use crate::trace::Camera;
 use crate::manager::*;
 use crate::job::{Job, WorkUnit};
+use crate::debug::d_println;
 
 pub struct LocalWorker {
     sender: Sender<WorkerRequest>,

@@ -11,6 +11,7 @@ pub mod color;
 pub mod shapes;
 pub mod sampling;
 pub mod workers;
+pub mod debug;
 pub mod scene;
 pub mod trace;
 pub mod constants;
