@@ -14,6 +14,7 @@ use serde_cbor::{to_writer, to_vec};
 use std::net::{TcpListener, TcpStream};
 use std::thread;
 use std::io;
+use std::io::Write;
 use std::str::FromStr;
 
 use clap::{Arg, App};
@@ -34,6 +35,7 @@ fn handle_client(stream: TcpStream, worker: &WorkerHandle, config: &Config) -> i
     let mut owned_stream = stream;
     println!("Sending info");
     to_writer(&mut owned_stream, &worker_info).unwrap();
+    owned_stream.flush().unwrap();
     println!("Done sending info");
 
     let thread_stream = owned_stream.try_clone().unwrap();
