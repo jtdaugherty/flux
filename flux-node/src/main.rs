@@ -9,12 +9,11 @@ use fluxcore::workers::*;
 
 use serde_cbor::StreamDeserializer;
 use serde_cbor::de::IoRead;
-use serde_cbor::{to_writer, to_vec};
+use serde_cbor::to_writer;
 
 use std::net::{TcpListener, TcpStream};
 use std::thread;
 use std::io;
-use std::io::Write;
 use std::str::FromStr;
 
 use clap::{Arg, App};
@@ -28,15 +27,8 @@ fn handle_client(stream: TcpStream, worker: &WorkerHandle, config: &Config) -> i
         num_threads: config.num_threads,
     };
 
-    let v = to_vec(&worker_info).unwrap();
-    println!("Sending {} bytes of info", v.len());
-    println!("{:?}", v);
-
     let mut owned_stream = stream;
-    println!("Sending info");
     to_writer(&mut owned_stream, &worker_info).unwrap();
-    owned_stream.flush().unwrap();
-    println!("Done sending info");
 
     let thread_stream = owned_stream.try_clone().unwrap();
     let stream_de: StreamDeserializer<'_, IoRead<TcpStream>, NetworkWorkerRequest> =
