@@ -118,7 +118,12 @@ impl RenderManager {
                 let wu_queue_cancel = Arc::clone(&wu_queue);
                 thread::Builder::new().name(format!("Cancel listener for {:?}", job.id)).spawn(move || {
                     d_println(format!("Cancel listener waiting for cancel message"));
-                    notify_cancel.recv().unwrap();
+                    match notify_cancel.recv() {
+                        Ok(_) => (),
+                        Err(_) => {
+                            return;
+                        }
+                    }
                     d_println(format!("Cancel listener got cancellation"));
                     wu_queue_cancel.lock().unwrap().cancel();
                 }).unwrap();
