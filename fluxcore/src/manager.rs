@@ -29,11 +29,12 @@ pub struct WorkUnitResult {
 
 pub struct RenderManager {
     job_id_allocator: JobIDAllocator,
-    job_queue: Sender<Option<(Job, Sender<()>, Receiver<()>)>>,
+    job_queue: Sender<ScheduledJob>,
     thread_handle: thread::JoinHandle<()>,
 }
 
 pub type WorkerRequest = Option<(Box<Job>, Receiver<WorkUnit>, Sender<Option<RenderEvent>>, WaitGroup)>;
+type ScheduledJob = Option<(Job, Sender<()>, Receiver<()>, Sender<Option<RenderEvent>>)>;
 
 pub struct WorkerHandle {
     sender: Sender<WorkerRequest>,
@@ -69,17 +70,17 @@ impl JobHandle {
 }
 
 impl RenderManager {
-    pub fn new(workers: Vec<WorkerHandle>, result_sender: Sender<Option<RenderEvent>>) -> RenderManager {
+    pub fn new(workers: Vec<WorkerHandle>) -> RenderManager {
         if workers.is_empty() {
             panic!("RenderManager::new: must provide at least one worker handle");
         }
 
-        let (s, r): (Sender<Option<(Job, Sender<()>, Receiver<()>)>>, Receiver<Option<(Job, Sender<()>, Receiver<()>)>>) = unbounded();
+        let (s, r): (Sender<ScheduledJob>, Receiver<ScheduledJob>) = unbounded();
 
         let handle = thread::Builder::new().name("RenderManager".to_string()).spawn(move || {
             d_println(format!("Render manager: awaiting job"));
 
-            while let Ok(Some((job, notify_done, notify_cancel))) = r.recv() {
+            while let Ok(Some((job, notify_done, notify_cancel, result_sender))) = r.recv() {
                 d_println(format!("Render manager: got job {:?}", job.id));
 
                 let info_event = RenderEvent::ImageInfo {
@@ -108,6 +109,7 @@ impl RenderManager {
                 }).unwrap();
 
                 let wu_queue_read = Arc::clone(&wu_queue);
+                let job_id = job.id.clone();
                 thread::Builder::new().name(format!("Work queue for {:?}", job.id)).spawn(move || {
                     d_println(format!("Work queue producer starting"));
                     loop {
@@ -119,7 +121,13 @@ impl RenderManager {
                             },
                             Some(i) => {
                                 d_println(format!("Work item ready, adding to queue"));
-                                ws.send(i.clone()).unwrap();
+                                match ws.send(i.clone()) {
+                                    Ok(_) => (),
+                                    Err(_) => {
+                                        d_println(format!("Work queue for {:?} exiting due to send failure", job_id));
+                                        return;
+                                    },
+                                }
                             }
                         }
                     }
@@ -143,11 +151,20 @@ impl RenderManager {
                 d_println(format!("Render manager: all workers done"));
 
                 let end_time = SystemTime::now();
-                result_sender.send(Some(RenderEvent::RenderingFinished { end_time, })).unwrap();
+                match result_sender.send(Some(RenderEvent::RenderingFinished { end_time, })) {
+                    Ok(_) => (),
+                    Err(_) => {
+                        d_println(format!("RenderManager advancing to next job due to result_sender send error"));
+                        continue;
+                    }
+                }
 
                 match notify_done.send(()) {
                     Ok(_) => (),
-                    Err(_) => (),
+                    Err(_) => {
+                        d_println(format!("RenderManager advancing to next job due to notify_done send error"));
+                        continue;
+                    }
                 }
             }
 
@@ -161,7 +178,7 @@ impl RenderManager {
         }
     }
 
-    pub fn schedule_job(&mut self, scene_data: &SceneData, config: JobConfiguration) -> JobHandle {
+    pub fn schedule_job(&mut self, scene_data: &SceneData, config: JobConfiguration, result_sender: Sender<Option<RenderEvent>>) -> JobHandle {
         let id = self.job_id_allocator.next_id();
         let (s, r): (Sender<()>, Receiver<()>) = unbounded();
         let (cs, cr): (Sender<()>, Receiver<()>) = unbounded();
@@ -170,7 +187,7 @@ impl RenderManager {
             config,
             id,
         };
-        self.job_queue.send(Some((j, s, cr))).unwrap();
+        self.job_queue.send(Some((j, s, cr, result_sender))).unwrap();
         JobHandle {
             job_id: id,
             waiter: r,
@@ -179,8 +196,8 @@ impl RenderManager {
     }
 
     pub fn stop(self) {
-        self.job_queue.send(None).unwrap();
-        self.thread_handle.join().unwrap();
+        self.job_queue.send(None).ok();
+        self.thread_handle.join().ok();
     }
 }
 
@@ -256,14 +273,20 @@ impl ImageBuilder {
         let thread_handle = thread::Builder::new().name("ImageBuilder".to_string()).spawn(move || {
             let (scene_name, width, height) = match r.recv() {
                 Ok(Some(RenderEvent::ImageInfo { scene_name, width, height } )) => (scene_name, width, height),
-                _ => panic!("ImageBuilder: got unexpected message"),
+                _ => {
+                    d_println(format!("ImageBuilder: got unexpected message"));
+                    return;
+                },
             };
 
             d_println(format!("ImageBuilder: image {} x {} pixels", width, height));
 
             let start_time = match r.recv() {
                 Ok(Some(RenderEvent::RenderingStarted { start_time, .. })) => start_time,
-                _ => panic!("ImageBuilder: got unexpected message when expecting render start message"),
+                _ => {
+                    d_println(format!("ImageBuilder: got unexpected message when expecting render start message"));
+                    return;
+                }
             };
 
             {
@@ -293,7 +316,10 @@ impl ImageBuilder {
                         let img = opt.as_mut().unwrap();
                         img.write(&mut output_file);
                     },
-                    _ => panic!("ImageBuilder: got unexpected message"),
+                    _ => {
+                        d_println(format!("ImageBuilder: got unexpected message"));
+                        return;
+                    },
                 }
             }
         }).unwrap();
@@ -314,8 +340,8 @@ impl ImageBuilder {
     }
 
     pub fn stop(self) {
-        self.sender.send(None).unwrap();
-        self.thread_handle.join().unwrap();
+        self.sender.send(None).ok();
+        self.thread_handle.join().ok();
     }
 }
 

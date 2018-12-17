@@ -65,12 +65,9 @@ fn main() {
         }
     }
 
-    // Start an image accumulator thread
-    let image_builder = ImageBuilder::new();
-
     // Start the rendering manager
     println!("Starting rendering manager");
-    let mut manager = RenderManager::new(worker_handles, image_builder.sender());
+    let mut manager = RenderManager::new(worker_handles);
 
     // Build a job configuration from the local config
     let jobcfg = JobConfiguration {
@@ -79,18 +76,24 @@ fn main() {
         sample_root: config.sample_root,
     };
 
-    // Submit the job to the rendering manager
-    println!("Sending job to rendering manager");
-    let job = manager.schedule_job(&s, jobcfg);
-
     if config.show_live_preview {
         // If the live preview was requested, create an SDL window and
         // update it from the image accumulator
-        show_preview(&job, &s, &image_builder);
+        show_preview(&mut manager, &s, jobcfg);
     } else {
         // Else the live preview was not requested, so just block until
         // the job completes.
+
+        // Start an image accumulator thread
+        let image_builder = ImageBuilder::new();
+
+        // Submit the job to the rendering manager
+        println!("Sending job to rendering manager");
+        let job = manager.schedule_job(&s, jobcfg, image_builder.sender());
+
         job.wait();
+
+        image_builder.stop();
     }
 
     println!("Shutting down");
@@ -106,7 +109,6 @@ fn main() {
     }
 
     manager.stop();
-    image_builder.stop();
 }
 
 #[derive(Debug)]
@@ -202,7 +204,7 @@ fn config_from_args() -> Config {
     }
 }
 
-fn show_preview(job: &JobHandle, s: &SceneData, image_builder: &ImageBuilder) {
+fn show_preview(manager: &mut RenderManager, s: &SceneData, jcfg: JobConfiguration) {
     // SDL setup /////////////////////////////////////////////////////////////
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
@@ -231,6 +233,9 @@ fn show_preview(job: &JobHandle, s: &SceneData, image_builder: &ImageBuilder) {
 
     let mut copied_rows: Vec<bool> = (0..image_height).map(|_| false).collect();
     let mut finished = false;
+    let mut jobcfg = jcfg;
+    let mut image_builder = ImageBuilder::new();
+    let mut job = manager.schedule_job(&s, jobcfg, image_builder.sender());
 
     'running: loop {
         {
@@ -276,9 +281,31 @@ fn show_preview(job: &JobHandle, s: &SceneData, image_builder: &ImageBuilder) {
                 Event::Quit {..} |
                     Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                         job.cancel();
+                        image_builder.stop();
                         break 'running
                     },
-                _ => {}
+                Event::TextInput { text, .. } => {
+                    if text == "+" {
+                        image_builder.stop();
+                        finished = false;
+                        println!("Pressed plus");
+                        copied_rows = (0..image_height).map(|_| false).collect();
+                        jobcfg.sample_root += 1;
+                        image_builder = ImageBuilder::new();
+                        job = manager.schedule_job(&s, jobcfg, image_builder.sender());
+                    } else if text == "-" {
+                        if jobcfg.sample_root > 1 {
+                            image_builder.stop();
+                            finished = false;
+                            println!("Pressed minus");
+                            copied_rows = (0..image_height).map(|_| false).collect();
+                            jobcfg.sample_root -= 1;
+                            image_builder = ImageBuilder::new();
+                            job = manager.schedule_job(&s, jobcfg, image_builder.sender());
+                        }
+                    }
+                },
+                _ => {},
             }
         }
 

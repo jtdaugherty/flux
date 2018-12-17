@@ -40,7 +40,7 @@ impl LocalWorker {
         let (s, r): (Sender<WorkerRequest>, Receiver<WorkerRequest>) = unbounded();
 
         let handle = thread::Builder::new().name("LocalWorker".to_string()).spawn(move || {
-            while let Ok(Some((job, recv_unit, send_result, wg))) = r.recv() {
+            'main: while let Ok(Some((job, recv_unit, send_result, wg))) = r.recv() {
                 d_println(format!("Local worker: got job {:?}", job.id));
 
                 let scene = Scene::from_data(job.scene_data, job.config);
@@ -64,7 +64,8 @@ impl LocalWorker {
                     match send_result.send(Some(ev)) {
                         Ok(()) => (),
                         Err(_) => {
-                            return;
+                            d_println(format!("LocalWorker advancing to next job to due result send error"));
+                            continue 'main;
                         }
                     }
                 }
