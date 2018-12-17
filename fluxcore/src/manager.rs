@@ -144,7 +144,14 @@ impl RenderManager {
 
                 let start_time = SystemTime::now();
                 let start_event = RenderEvent::RenderingStarted { job_id: job.id, start_time, };
-                result_sender.send(Some(start_event)).unwrap();
+
+                match result_sender.send(Some(start_event)) {
+                    Ok(_) => (),
+                    Err(_) => {
+                        d_println(format!("RenderManager advancing to next job due to start event send error"));
+                        continue;
+                    }
+                }
 
                 workers.iter().for_each(|worker| {
                     let job_boxed = Box::new(job.clone());
