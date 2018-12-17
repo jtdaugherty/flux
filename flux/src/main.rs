@@ -204,6 +204,13 @@ fn config_from_args() -> Config {
     }
 }
 
+fn title(jobcfg: &JobConfiguration) -> String {
+    format!("flux render ({} sample{} per pixel)",
+        jobcfg.sample_root * jobcfg.sample_root,
+        if jobcfg.sample_root == 1 { "" } else { "s" },
+    )
+}
+
 fn show_preview(manager: &mut RenderManager, s: &SceneData, jcfg: JobConfiguration) {
     // SDL setup /////////////////////////////////////////////////////////////
     let sdl_context = sdl2::init().unwrap();
@@ -212,7 +219,7 @@ fn show_preview(manager: &mut RenderManager, s: &SceneData, jcfg: JobConfigurati
 
     let image_width = s.output_settings.image_width;
     let image_height = s.output_settings.image_height;
-    let window = video_subsystem.window("flux render",
+    let window = video_subsystem.window(title(&jcfg).as_str(),
                                         image_width as u32,
                                         image_height as u32)
         .position_centered()
@@ -288,18 +295,18 @@ fn show_preview(manager: &mut RenderManager, s: &SceneData, jcfg: JobConfigurati
                     if text == "+" {
                         image_builder.stop();
                         finished = false;
-                        println!("Pressed plus");
                         copied_rows = (0..image_height).map(|_| false).collect();
                         jobcfg.sample_root += 1;
+                        canvas.window_mut().set_title(title(&jobcfg).as_str()).unwrap();
                         image_builder = ImageBuilder::new();
                         job = manager.schedule_job(&s, jobcfg, image_builder.sender());
                     } else if text == "-" {
                         if jobcfg.sample_root > 1 {
                             image_builder.stop();
                             finished = false;
-                            println!("Pressed minus");
                             copied_rows = (0..image_height).map(|_| false).collect();
                             jobcfg.sample_root -= 1;
+                            canvas.window_mut().set_title(title(&jobcfg).as_str()).unwrap();
                             image_builder = ImageBuilder::new();
                             job = manager.schedule_job(&s, jobcfg, image_builder.sender());
                         }
