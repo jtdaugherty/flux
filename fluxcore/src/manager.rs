@@ -88,7 +88,14 @@ impl RenderManager {
                     width: job.scene_data.output_settings.image_width,
                     height: job.scene_data.output_settings.image_height,
                 };
-                result_sender.send(Some(info_event)).unwrap();
+
+                match result_sender.send(Some(info_event)) {
+                    Ok(_) => (),
+                    Err(_) => {
+                        d_println(format!("RenderManager advancing to next job due to info event send error"));
+                        continue;
+                    }
+                }
 
                 let (ws, wr) = bounded(1);
                 let wg = WaitGroup::new();
