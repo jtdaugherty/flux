@@ -155,6 +155,8 @@ impl RenderManager {
 
                 workers.iter().for_each(|worker| {
                     let job_boxed = Box::new(job.clone());
+                    // Note that we panic on send failures here because a worker that is down is
+                    // bad enough that we can't recover
                     worker.send(job_boxed, wr.clone(), result_sender.clone(), wg.clone()).unwrap();
                 });
 
