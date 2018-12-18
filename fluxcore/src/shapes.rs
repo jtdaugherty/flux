@@ -152,7 +152,7 @@ impl Intersectable for Plane {
 }
 
 impl Sphere {
-    pub fn new(data: SphereData, material: Box<Material>) -> Sphere {
+    pub fn new(data: SphereData, material: Box<Material>) -> Self {
         let delta = Vector3::new(data.radius, data.radius, data.radius);
         let corner0 = data.center - delta;
         let corner1 = data.center + delta;
@@ -160,7 +160,7 @@ impl Sphere {
             corner0, corner1,
         };
 
-        Sphere {
+        Self {
             data,
             material,
             bbox,

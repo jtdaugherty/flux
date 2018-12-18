@@ -23,7 +23,7 @@ pub struct LocalWorker {
 }
 
 impl LocalWorker {
-    pub fn new(num_threads: usize) -> LocalWorker {
+    pub fn new(num_threads: usize) -> Self {
         let tp_result = rayon::ThreadPoolBuilder::new()
             .num_threads(num_threads)
             .build_global();
@@ -77,7 +77,7 @@ impl LocalWorker {
             d_println(format!("Local worker shutting down"));
         }).unwrap();
 
-        LocalWorker {
+        Self {
             sender: s,
             thread_handle: handle,
             worker_info: WorkerInfo {
@@ -116,7 +116,7 @@ pub struct NetworkWorker {
 }
 
 impl NetworkWorker {
-    pub fn new(raw_endpoint: &String) -> Result<NetworkWorker, io::Error> {
+    pub fn new(raw_endpoint: &String) -> Result<Self, io::Error> {
         let endpoint = match raw_endpoint.find(':') {
             None => format!("{}:{}", raw_endpoint, DEFAULT_PORT),
             Some(_) => raw_endpoint.clone(),
@@ -232,7 +232,7 @@ impl NetworkWorker {
                     d_println(format!("Network worker shutting down"));
                 }).unwrap();
 
-                Ok(NetworkWorker {
+                Ok(Self {
                     sender: s,
                     thread_handle: handle,
                     worker_info,

@@ -11,8 +11,8 @@ pub struct MasterSampleSets {
 
 impl MasterSampleSets {
     pub fn new(sampler: &mut samplers::Sampler, sample_root: usize,
-               max_depth: usize, num_sets: usize) -> MasterSampleSets {
-        MasterSampleSets {
+               max_depth: usize, num_sets: usize) -> Self {
+        Self {
             pixel_sets: (0..num_sets).map(|_|
                 sampler.grid_correlated_multi_jittered(sample_root)).collect(),
 

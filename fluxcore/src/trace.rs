@@ -25,10 +25,10 @@ pub struct Camera {
 impl Camera {
     pub fn new(settings: CameraSettings, basis: CameraBasis, config: JobConfiguration, num_sets: usize,
                zoom_factor: f64, view_plane_distance: f64, focal_distance: f64,
-               lens_radius: f64) -> Camera {
+               lens_radius: f64) -> Self {
         let mut s = Sampler::new();
 
-        Camera {
+        Self {
             settings,
             basis,
             config,

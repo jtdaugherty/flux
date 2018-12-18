@@ -24,10 +24,10 @@ pub struct Sampler {
 }
 
 impl Sampler {
-    pub fn new() -> Sampler {
+    pub fn new() -> Self {
         let mut trng = rand::thread_rng();
 
-        Sampler {
+        Self {
             rng: IsaacRng::new_from_u64(trng.gen())
         }
     }

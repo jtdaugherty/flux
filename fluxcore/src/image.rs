@@ -12,8 +12,8 @@ pub struct Image {
 }
 
 impl Image {
-    pub fn new(w: usize, h: usize) -> Image {
-        Image {
+    pub fn new(w: usize, h: usize) -> Self {
+        Self {
             pixels: (0..h).map(|_| vec![]).collect(),
             width: w,
             height: h,

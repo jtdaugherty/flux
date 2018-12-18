@@ -17,10 +17,10 @@ pub struct JobIDAllocator {
 }
 
 impl JobIDAllocator {
-    pub fn new() -> JobIDAllocator {
+    pub fn new() -> Self {
         let mut trng = rand::thread_rng();
 
-        JobIDAllocator {
+        Self {
             allocator_id: trng.gen(),
             next_id: 0,
         }

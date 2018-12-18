@@ -41,8 +41,8 @@ pub struct WorkerHandle {
 }
 
 impl WorkerHandle {
-    pub fn new(sender: Sender<WorkerRequest>) -> WorkerHandle {
-        WorkerHandle {
+    pub fn new(sender: Sender<WorkerRequest>) -> Self {
+        Self {
             sender,
         }
     }
@@ -70,7 +70,7 @@ impl JobHandle {
 }
 
 impl RenderManager {
-    pub fn new(workers: Vec<WorkerHandle>) -> RenderManager {
+    pub fn new(workers: Vec<WorkerHandle>) -> Self {
         if workers.is_empty() {
             panic!("RenderManager::new: must provide at least one worker handle");
         }
@@ -188,7 +188,7 @@ impl RenderManager {
             d_println(format!("Render manager: shutting down"));
         }).unwrap();
 
-        RenderManager {
+        Self {
             job_id_allocator: JobIDAllocator::new(),
             job_queue: s,
             thread_handle: handle,
@@ -240,7 +240,7 @@ pub struct ConsoleResultReporter {
 }
 
 impl ConsoleResultReporter {
-    pub fn new() -> ConsoleResultReporter {
+    pub fn new() -> Self {
         let (s, r): (Sender<Option<RenderEvent>>, Receiver<Option<RenderEvent>>) = unbounded();
 
         thread::Builder::new().name("ConsoleResultReporter".to_string()).spawn(move || {
@@ -265,7 +265,7 @@ impl ConsoleResultReporter {
             }
         }).unwrap();
 
-        ConsoleResultReporter {
+        Self {
             sender: s,
         }
     }
@@ -282,7 +282,7 @@ pub struct ImageBuilder {
 }
 
 impl ImageBuilder {
-    pub fn new() -> ImageBuilder {
+    pub fn new() -> Self {
         let (s, r): (Sender<Option<RenderEvent>>, Receiver<Option<RenderEvent>>) = unbounded();
         let img_ref = Arc::new(Mutex::new(None));
         let img_ref_thread = img_ref.clone();
@@ -341,7 +341,7 @@ impl ImageBuilder {
             }
         }).unwrap();
 
-        ImageBuilder {
+        Self {
             sender: s,
             thread_handle,
             image: img_ref,
@@ -368,8 +368,8 @@ struct CancellableIterator<T: Iterator> {
 }
 
 impl<T: Iterator> CancellableIterator<T> {
-    pub fn new(items: T) -> CancellableIterator<T> {
-        CancellableIterator {
+    pub fn new(items: T) -> Self {
+        Self {
             items,
             cancelled: false,
         }

@@ -16,8 +16,8 @@ pub struct Color {
 }
 
 impl Color {
-    pub fn new(r: f64, g: f64, b: f64) -> Color {
-        Color { r, g, b }
+    pub fn new(r: f64, g: f64, b: f64) -> Self {
+        Self { r, g, b }
     }
 
     pub fn all(v: f64) -> Color {

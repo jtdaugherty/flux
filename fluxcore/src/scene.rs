@@ -26,11 +26,11 @@ pub struct CameraBasis {
 }
 
 impl CameraBasis {
-    pub fn new(s: &CameraSettings) -> CameraBasis {
+    pub fn new(s: &CameraSettings) -> Self {
         let w = (s.eye - s.look_at).normalize();
         let u = s.up.cross(&w).normalize();
         let v = w.cross(&u);
-        CameraBasis { u, v, w }
+        Self { u, v, w }
     }
 }
 
