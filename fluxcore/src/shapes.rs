@@ -8,7 +8,7 @@ use crate::color::Color;
 
 pub struct Sphere {
     pub data: SphereData,
-    pub material: Box<Material>,
+    pub material: Box<dyn Material>,
     pub bbox: BoundingBox,
 }
 
@@ -24,7 +24,7 @@ pub struct SphereData {
 
 pub struct Plane {
     pub data: PlaneData,
-    pub material: Box<Material>,
+    pub material: Box<dyn Material>,
 }
 
 #[derive(Clone)]
@@ -152,7 +152,7 @@ impl Intersectable for Plane {
 }
 
 impl Sphere {
-    pub fn new(data: SphereData, material: Box<Material>) -> Self {
+    pub fn new(data: SphereData, material: Box<dyn Material>) -> Self {
         let delta = Vector3::new(data.radius, data.radius, data.radius);
         let corner0 = data.center - delta;
         let corner1 = data.center + delta;

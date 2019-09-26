@@ -7,7 +7,7 @@ use crate::materials::Material;
 pub struct Hit<'a> {
     pub local_hit_point: Point3<f64>,
     pub normal: Vector3<f64>,
-    pub material: &'a Material,
+    pub material: &'a dyn Material,
     pub distance: f64,
     pub ray: Ray,
     pub depth: usize,

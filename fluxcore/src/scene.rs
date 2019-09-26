@@ -77,14 +77,14 @@ pub struct Scene {
     pub scene_name: String,
     pub output_settings: OutputSettings,
     pub background: Color,
-    pub shapes: Vec<Box<Intersectable>>,
+    pub shapes: Vec<Box<dyn Intersectable>>,
     pub camera_settings: CameraSettings,
     pub camera_basis: CameraBasis,
     pub camera_data: CameraData,
     pub job_config: JobConfiguration,
 }
 
-pub fn material_from_data(d: &MaterialData) -> Box<Material> {
+pub fn material_from_data(d: &MaterialData) -> Box<dyn Material> {
     match d {
         MaterialData::Emissive(e) => {
             Box::new(Emissive {
@@ -126,16 +126,16 @@ pub fn material_from_data(d: &MaterialData) -> Box<Material> {
 
 impl Scene {
     pub fn from_data(sd: SceneData, config: JobConfiguration) -> Scene {
-        let shapes: Vec<Box<Intersectable>> = sd.shapes.into_iter().map(|sd| {
+        let shapes: Vec<Box<dyn Intersectable>> = sd.shapes.into_iter().map(|sd| {
             match sd {
                 ShapeData::Sphere(s) => {
                     let m = material_from_data(&s.material);
-                    let b: Box<Intersectable> = Box::new(Sphere::new(s, m));
+                    let b: Box<dyn Intersectable> = Box::new(Sphere::new(s, m));
                     b
                 },
                 ShapeData::Plane(p) => {
                     let m = material_from_data(&p.material);
-                    let b: Box<Intersectable> = Box::new(Plane { data: p, material: m });
+                    let b: Box<dyn Intersectable> = Box::new(Plane { data: p, material: m });
                     b
                 },
             }

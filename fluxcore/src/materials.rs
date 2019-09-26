@@ -50,7 +50,7 @@ impl Material for Emissive {
 }
 
 pub struct Reflective {
-    pub reflective_brdf: Box<BRDF>,
+    pub reflective_brdf: Box<dyn BRDF>,
 }
 
 impl Material for Reflective {
