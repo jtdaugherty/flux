@@ -128,7 +128,7 @@ impl BoundingBox {
         let t0 = max(tx_min, max(ty_min, tz_min));
         let t1 = min(tx_max, min(ty_max, tz_max));
 
-        (t0 < t1 && t1 > T_MIN)
+        t0 < t1 && t1 > T_MIN
     }
 }
 

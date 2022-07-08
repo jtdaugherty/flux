@@ -7,12 +7,12 @@ edition = "2018"
 [dependencies]
 samplers = { path = "../samplers" }
 fluxcore = { path = "../fluxcore" }
-nalgebra = "0.16.5"
-clap = "2.32"
-serde_yaml = "0.8"
-num_cpus = "1.9"
+nalgebra = "0.31.0"
+clap = "3.2.8"
+serde_yaml = "0.8.24"
+num_cpus = "1.13.1"
 
 [dependencies.sdl2]
-version = "0.31.0"
+version = "0.35.2"
 default-features = false
 features = ["image"]

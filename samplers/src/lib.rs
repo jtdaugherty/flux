@@ -1,8 +1,9 @@
 
-use nalgebra::{Vector3, normalize};
+use nalgebra::{Vector3};
 
-use rand::IsaacRng;
-use rand::Rng;
+use rand_isaac::IsaacRng;
+use rand::seq::SliceRandom;
+use rand::{Rng, SeedableRng};
 use rand::distributions::{Distribution, Uniform};
 
 #[macro_use] extern crate itertools;
@@ -28,7 +29,7 @@ impl Sampler {
         let mut trng = rand::thread_rng();
 
         Self {
-            rng: IsaacRng::new_from_u64(trng.gen())
+            rng: IsaacRng::seed_from_u64(trng.gen())
         }
     }
 
@@ -78,8 +79,8 @@ impl Sampler {
         let mut x_idxs: Vec<usize> = (0..root).collect();
         let mut y_idxs: Vec<usize> = (0..root).collect();
 
-        self.rng.shuffle(&mut x_idxs);
-        self.rng.shuffle(&mut y_idxs);
+        x_idxs.shuffle(&mut self.rng);
+        y_idxs.shuffle(&mut self.rng);
 
         let y_shuffled: Vec<Vec<UnitSquareSample>> = samples.iter().map(|vec| self.shuffle_y(Some(&y_idxs), &vec, root)).collect();
         let x_shuffled: Vec<Vec<UnitSquareSample>> = transpose(
@@ -91,7 +92,7 @@ impl Sampler {
 
     fn shuffle_y(&mut self, m_idxs: Option<&Vec<usize>>, vals: &Vec<UnitSquareSample>, root: usize) -> Vec<UnitSquareSample> {
         let mut new_idxs: Vec<usize> = (0..root).collect();
-        self.rng.shuffle(&mut new_idxs);
+        new_idxs.shuffle(&mut self.rng);
 
         let idxs = match m_idxs {
             Some(is) => is,
@@ -109,7 +110,7 @@ impl Sampler {
 
     fn shuffle_x(&mut self, m_idxs: Option<&Vec<usize>>, vals: &Vec<UnitSquareSample>, root: usize) -> Vec<UnitSquareSample> {
         let mut new_idxs: Vec<usize> = (0..root).collect();
-        self.rng.shuffle(&mut new_idxs);
+        new_idxs.shuffle(&mut self.rng);
 
         let idxs = match m_idxs {
             Some(is) => is,
@@ -138,7 +139,7 @@ pub fn to_unit_hemi(p: &UnitSquareSample, e: f64) -> Vector3<f64> {
     let pu = sin_theta * cos_phi;
     let pv = sin_theta * sin_phi;
     let pw = cos_theta;
-    normalize(&Vector3::new(pu, pv, pw))
+    Vector3::new(pu, pv, pw).normalize()
 }
 
 pub fn to_poisson_disc(points: Vec<UnitSquareSample>) -> Vec<UnitDiscSample> {

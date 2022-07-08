@@ -6,7 +6,7 @@ use std::process::exit;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use sdl2::image::{INIT_PNG, INIT_JPG};
+use sdl2::image::InitFlag;
 
 use fluxcore::manager::*;
 use fluxcore::workers::{LocalWorker, NetworkWorker};
@@ -131,39 +131,39 @@ fn config_from_args() -> Config {
              .index(1)
              .required(true))
         .arg(Arg::with_name("network_worker")
-             .short("n")
+             .short('n')
              .long("node")
              .value_name("ADDRESS[:PORT]")
              .help("Render using the specified flux-node process at this address")
              .multiple(true)
              .takes_value(true))
         .arg(Arg::with_name("depth")
-             .short("d")
+             .short('d')
              .long("depth")
              .value_name("DEPTH")
              .help("Tracing depth")
              .takes_value(true))
         .arg(Arg::with_name("rowsperunit")
-             .short("R")
+             .short('R')
              .long("rows")
              .value_name("COUNT")
              .help("Image rows per work unit")
              .takes_value(true))
         .arg(Arg::with_name("skip_local")
-             .short("L")
+             .short('L')
              .help("Do not use the local host for rendering")
              .takes_value(false))
         .arg(Arg::with_name("show_preview")
-             .short("g")
+             .short('g')
              .help("Show a live graphical preview window during rendering")
              .takes_value(false))
         .arg(Arg::with_name("threads")
-             .short("t")
+             .short('t')
              .long("threads")
              .help("Number of rendering threads for the local worker (defaults to number of logical CPUs)")
              .takes_value(true))
         .arg(Arg::with_name("sample_root")
-             .short("r")
+             .short('r')
              .long("root")
              .help("Sample root")
              .takes_value(true));
@@ -217,7 +217,7 @@ fn show_preview(manager: &mut RenderManager, s: &SceneData, jcfg: JobConfigurati
     // SDL setup /////////////////////////////////////////////////////////////
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
-    let _image_context = sdl2::image::init(INIT_PNG | INIT_JPG).unwrap();
+    let _image_context = sdl2::image::init(InitFlag::PNG | InitFlag::JPG).unwrap();
 
     let image_width = s.output_settings.image_width;
     let image_height = s.output_settings.image_height;

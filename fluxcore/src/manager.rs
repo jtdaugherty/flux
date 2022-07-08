@@ -1,7 +1,7 @@
 
 use crossbeam::channel::{Sender, Receiver, bounded, unbounded};
 use crossbeam::sync::WaitGroup;
-use crossbeam::SendError;
+use crossbeam::channel::SendError;
 use std::fs::File;
 use std::thread;
 use std::sync::{Arc, Mutex};

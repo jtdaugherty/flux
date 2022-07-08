@@ -7,5 +7,5 @@ edition = "2018"
 [dependencies]
 samplers = { path = "../samplers" }
 fluxcore = { path = "../fluxcore" }
-nalgebra = "0.16.5"
-clap = "2.32"
+nalgebra = "0.31.0"
+clap = "3.2.8"

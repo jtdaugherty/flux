@@ -65,7 +65,7 @@ fn config_from_args() -> Config {
         .author("Jonathan Daugherty <cygnus@foobox.com>")
         .about("Sampler debugging utility")
         .arg(Arg::with_name("sample_root")
-             .short("r")
+             .short('r')
              .long("root")
              .help("Sample root")
              .takes_value(true));

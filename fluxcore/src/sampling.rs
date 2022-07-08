@@ -1,6 +1,6 @@
 
 use nalgebra::{Vector3};
-use rand::Rng;
+use rand::seq::SliceRandom;
 
 pub struct MasterSampleSets {
     num_sets: usize,
@@ -35,7 +35,7 @@ impl MasterSampleSets {
     pub fn shuffle_indices(&self) -> Vec<usize> {
         let mut sample_set_indexes: Vec<usize> = (0..self.num_sets).collect();
         let mut sampler = samplers::Sampler::new();
-        sampler.rng.shuffle(&mut sample_set_indexes);
+        sample_set_indexes.shuffle(&mut sampler.rng);
         sample_set_indexes
     }
 }
