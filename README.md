@@ -23,3 +23,6 @@ For a slower but very high-quality render:
 ```
 $ cargo run --bin flux -- -r 150 -d 16 -R 5 -g scenes/demo2.yml
 ```
+
+While the graphical preview is being updated, `Esc` will cancel the
+rendering at any time.
