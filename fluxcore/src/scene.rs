@@ -153,7 +153,7 @@ impl Scene {
         }
     }
 
-    fn hit(&self, r: &Ray, depth: usize) -> Option<Hit> {
+    fn hit(&self, r: &Ray, depth: usize) -> Option<Hit<'_>> {
         self.shapes.iter()
             .filter_map(|o| o.hit(&r, depth))
             .min_by(Hit::compare)
